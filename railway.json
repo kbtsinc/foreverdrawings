@@ -1,6 +1,7 @@
 {
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "echo 'skipping frontend build'"
   },
   "deploy": {
     "startCommand": "node server/api.js",

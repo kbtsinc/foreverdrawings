@@ -5,10 +5,11 @@
   "type": "module",
 "scripts": {
   "start": "node server/api.js",
-  "build": "echo 'No build needed for backend'",
+  "build": "vite build",
   "dev": "vite",
   "server": "node server/api.js",
   "backup": "node scripts/backup.js"
+},
 },
   "dependencies": {
     "@supabase/supabase-js": "^2.43.0",
