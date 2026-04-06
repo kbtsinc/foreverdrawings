@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- ─── PWA / App Meta ──────────────────────────────────────────────────── -->
+  <title>Forever Drawings</title>
+  <meta name="description" content="Your child's art vault — preserve every drawing forever" />
+  <meta name="application-name" content="Forever Drawings" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- iOS Safari specific -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Masterpiece" />
+
+  <!-- iOS splash screens (generate with a tool like pwa-asset-generator) -->
+  <link rel="apple-touch-startup-image" href="/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="/splash/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="/splash/splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" />
+
+  <!-- iOS touch icon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+
+  <!-- Theme color (controls browser chrome color on Android) -->
+  <meta name="theme-color" content="#E8640A" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#2D1B00" media="(prefers-color-scheme: dark)" />
+
+  <!-- Open Graph / sharing -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="Forever Drawings" />
+  <meta property="og:description" content="Your child's art vault — preserve every drawing forever" />
+  <meta property="og:image"       content="/icons/og-image.png" />
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+
+  <!-- Prevent zooming on input focus (iOS) -->
+  <style>
+    input, select, textarea { font-size: 16px !important; }
+
+    /* Safe area insets for notched phones */
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    /* Prevent pull-to-refresh interfering with the app */
+    body { overscroll-behavior-y: contain; }
+
+    /* Prevent text selection on UI elements */
+    button, nav { user-select: none; -webkit-user-select: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('[App] SW registered'))
+          .catch(err => console.error('[App] SW registration failed:', err));
+      });
+    }
+
+    // Handle URL shortcut: /?action=upload
+    window.__PWA_ACTION = new URLSearchParams(window.location.search).get('action');
+  </script>
+
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

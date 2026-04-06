@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Little Masterpiece — Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+      background: #FFF8F0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .icon { font-size: 72px; margin-bottom: 24px; }
+    h1 { font-size: 28px; color: #2D1B00; margin-bottom: 12px; font-weight: 900; letter-spacing: -1px; }
+    p  { font-size: 16px; color: #8B6040; line-height: 1.6; max-width: 320px; margin-bottom: 32px; }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(45,27,0,0.08);
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 16px; color: #2D1B00; margin-bottom: 12px; }
+    .tip { display: flex; gap: 12px; align-items: flex-start; text-align: left; margin-bottom: 10px; }
+    .tip span:first-child { font-size: 20px; flex-shrink: 0; }
+    .tip p { font-size: 13px; color: #8B6040; margin: 0; }
+    button {
+      background: #E8640A;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon">🎨</div>
+  <h1>You're offline</h1>
+  <p>No connection right now. Your vault is safe — reconnect to sync and upload artwork.</p>
+
+  <div class="card">
+    <h2>While you're offline you can still…</h2>
+    <div class="tip">
+      <span>🖼️</span>
+      <p>Browse artworks you've already viewed — they're cached on your device</p>
+    </div>
+    <div class="tip">
+      <span>📸</span>
+      <p>Queue photos to upload — they'll sync automatically when you reconnect</p>
+    </div>
+    <div class="tip">
+      <span>❤️</span>
+      <p>View your favorites and previously opened artwork</p>
+    </div>
+  </div>
+
+  <button onclick="window.location.reload()">Try Again</button>
+
+  <script>
+    // Auto-retry when connection comes back
+    window.addEventListener('online', () => window.location.reload());
+  </script>
+</body>
+</html>
