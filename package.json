@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "Preserve every drawing, forever.",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "server": "node server/api.js",
-    "backup": "node scripts/backup.js"
-  },
+"scripts": {
+  "start": "node server/api.js",
+  "build": "echo 'No build needed for backend'",
+  "dev": "vite",
+  "server": "node server/api.js",
+  "backup": "node scripts/backup.js"
+},
   "dependencies": {
     "@supabase/supabase-js": "^2.43.0",
     "react": "^18.3.0",
