@@ -763,24 +763,21 @@ function HomePage({ onLogin }) {
 
 // ─── Auth Screen ──────────────────────────────────────────────────────────────
 function AuthScreen({ onLogin, onBack }) {
-  const [mode, setMode]       = useState("login");
-  const [name, setName]       = useState("");
-  const [email, setEmail]     = useState("");
-  const [pass, setPass]       = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
-
-  async function submit() {
-    setError(""); setLoading(true);
-    try {
-      await new Promise(r => setTimeout(r, 600));
-      onLogin({ id: "demo", email, user_metadata: { full_name: name || "Parent" } });
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [mode, setMode]             = useState("login");
+  const [name, setName]             = useState("");
+  const [email, setEmail]           = useState("");
+  const [pass, setPass]             = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+  const [turnstileOk, setTurnstileOk] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  // Email verification flow
+  const [step, setStep]             = useState("form"); // "form" | "verify"
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyError, setVerifyError] = useState("");
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const turnstileRef = useRef(null);
+  const widgetId = useRef(null);
 
   const ff = "'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif";
   const orange = "#E8640A";
@@ -788,6 +785,152 @@ function AuthScreen({ onLogin, onBack }) {
   const muted = "#8B6040";
   const border = "#E8D5C0";
 
+  // Load Turnstile script on mount
+  useEffect(() => {
+    if (document.getElementById("cf-turnstile-script")) return;
+    const script = document.createElement("script");
+    script.id = "cf-turnstile-script";
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }, []);
+
+  // Render Turnstile widget when switching to signup and script is ready
+  useEffect(() => {
+    if (mode !== "signup" || step !== "form") return;
+    const tryRender = () => {
+      if (!window.turnstile || !turnstileRef.current) {
+        setTimeout(tryRender, 300);
+        return;
+      }
+      if (widgetId.current) {
+        try { window.turnstile.remove(widgetId.current); } catch(e) {}
+      }
+      turnstileRef.current.innerHTML = "";
+      setTurnstileOk(false);
+      setTurnstileToken("");
+      widgetId.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA", // test key
+        theme: "light",
+        callback: (token) => { setTurnstileOk(true); setTurnstileToken(token); },
+        "expired-callback": () => { setTurnstileOk(false); setTurnstileToken(""); },
+        "error-callback": () => { setTurnstileOk(false); },
+      });
+    };
+    tryRender();
+    return () => {
+      if (widgetId.current && window.turnstile) {
+        try { window.turnstile.remove(widgetId.current); } catch(e) {}
+        widgetId.current = null;
+      }
+    };
+  }, [mode, step]);
+
+  async function submitSignup() {
+    if (!name.trim()) { setError("Please enter your name."); return; }
+    if (!email.trim()) { setError("Please enter your email."); return; }
+    if (pass.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (!turnstileOk) { setError("Please complete the security check."); return; }
+    setError(""); setLoading(true);
+    try {
+      // In production: call Supabase signUp which sends confirmation email
+      // const { error } = await supabase.auth.signUp({
+      //   email, password: pass,
+      //   options: {
+      //     data: { full_name: name },
+      //     emailRedirectTo: `${window.location.origin}/auth/callback`,
+      //   }
+      // });
+      // if (error) throw error;
+
+      // Verify turnstile server-side in production:
+      // POST /api/verify-turnstile with { token: turnstileToken }
+
+      // For demo: simulate sending email and show verification screen
+      await new Promise(r => setTimeout(r, 800));
+      setStep("verify");
+    } catch(e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitLogin() {
+    if (!email.trim() || !pass.trim()) { setError("Please fill in all fields."); return; }
+    setError(""); setLoading(true);
+    try {
+      // In production: await supabase.auth.signInWithPassword({ email, password: pass });
+      await new Promise(r => setTimeout(r, 600));
+      onLogin({ id: "demo", email, user_metadata: { full_name: "Parent" } });
+    } catch(e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitVerify() {
+    if (verifyCode.length < 6) { setVerifyError("Please enter the 6-digit code."); return; }
+    setVerifyError(""); setVerifyLoading(true);
+    try {
+      // In production: await supabase.auth.verifyOtp({ email, token: verifyCode, type: "signup" });
+      await new Promise(r => setTimeout(r, 700));
+      onLogin({ id: "demo", email, user_metadata: { full_name: name } });
+    } catch(e) {
+      setVerifyError("Invalid code. Please try again.");
+    } finally {
+      setVerifyLoading(false);
+    }
+  }
+
+  // ── Email verification screen ──────────────────────────────────────────────
+  if (step === "verify") {
+    return (
+      <div style={{ minHeight:"100vh", background:"#FFF8F0", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", fontFamily:ff }}>
+        <div style={{ background:"white", borderRadius:"20px", padding:"36px", width:"100%", maxWidth:"400px", boxShadow:"0 8px 40px rgba(45,27,0,0.12)", textAlign:"center" }}>
+          <div style={{ fontSize:52, marginBottom:16 }}>📬</div>
+          <h2 style={{ fontSize:24, fontWeight:900, color:ink, margin:"0 0 10px", fontFamily:ff }}>Check your email</h2>
+          <p style={{ color:muted, fontSize:14, lineHeight:1.7, margin:"0 0 28px", fontFamily:ff }}>
+            We sent a 6-digit verification code to<br/>
+            <strong style={{ color:ink }}>{email}</strong>
+          </p>
+
+          <div style={{ marginBottom:16 }}>
+            <label style={{ display:"block", fontSize:11, fontWeight:700, color:muted, marginBottom:8, fontFamily:ff, textTransform:"uppercase", letterSpacing:"0.4px" }}>Verification code</label>
+            <input
+              value={verifyCode}
+              onChange={e => setVerifyCode(e.target.value.replace(/\D/g,"").slice(0,6))}
+              placeholder="000000"
+              maxLength={6}
+              inputMode="numeric"
+              autoFocus
+              style={{ width:"100%", padding:"16px", border:`2px solid ${verifyCode.length===6?orange:border}`, borderRadius:"12px", fontSize:"28px", fontFamily:"monospace", textAlign:"center", letterSpacing:"0.3em", color:ink, background:"#FFFDF9", outline:"none", boxSizing:"border-box", transition:"border-color .2s" }}
+            />
+          </div>
+
+          {verifyError && <p style={{ color:"#B91C1C", fontSize:13, margin:"0 0 12px" }}>{verifyError}</p>}
+
+          <button onClick={submitVerify} disabled={verifyLoading || verifyCode.length < 6} style={{ width:"100%", padding:"14px", background:verifyCode.length===6&&!verifyLoading?orange:"#F0E0D0", color:"white", border:"none", borderRadius:"12px", fontSize:"16px", fontWeight:700, cursor:verifyCode.length===6?"pointer":"default", fontFamily:ff, marginBottom:16 }}>
+            {verifyLoading ? "Verifying…" : "Verify & Create Vault →"}
+          </button>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            <button onClick={async()=>{ await new Promise(r=>setTimeout(r,500)); alert("Code resent!"); }} style={{ background:"none", border:"none", color:orange, fontSize:13, cursor:"pointer", fontFamily:ff, textDecoration:"underline" }}>
+              Resend code
+            </button>
+            <button onClick={()=>{ setStep("form"); setVerifyCode(""); setVerifyError(""); }} style={{ background:"none", border:"none", color:muted, fontSize:13, cursor:"pointer", fontFamily:ff }}>
+              ← Use a different email
+            </button>
+          </div>
+        </div>
+        <p style={{ marginTop:24, color:muted, fontSize:12, textAlign:"center", fontFamily:ff }}>The code expires in 10 minutes.</p>
+      </div>
+    );
+  }
+
+  // ── Main auth form ─────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight:"100vh", background:"#FFF8F0", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", fontFamily:ff }}>
       {onBack && (
@@ -795,8 +938,8 @@ function AuthScreen({ onLogin, onBack }) {
           ← Back
         </button>
       )}
-      <div style={{ textAlign:"center", marginBottom:"44px" }}>
-        <svg width="72" height="72" viewBox="0 0 72 72" style={{ marginBottom:"16px" }}>
+      <div style={{ textAlign:"center", marginBottom:"36px" }}>
+        <svg width="64" height="64" viewBox="0 0 72 72" style={{ marginBottom:"14px" }}>
           <circle cx="36" cy="36" r="36" fill={orange}/>
           <rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/>
           <polygon points="41,14 54,14 54,27" fill="#E8D5B0" opacity="0.9"/>
@@ -809,38 +952,68 @@ function AuthScreen({ onLogin, onBack }) {
             <polygon points="0,36 8,36 4,46" fill="#F4C88C"/>
           </g>
         </svg>
-        <h1 style={{ fontSize:"38px", fontWeight:"900", color:ink, margin:"0 0 8px", letterSpacing:"-1.5px", lineHeight:1 }}>Forever Drawings</h1>
-        <p style={{ color:muted, margin:0, fontSize:"16px", fontStyle:"italic" }}>Preserve every drawing, forever.</p>
+        <h1 style={{ fontSize:"34px", fontWeight:"900", color:ink, margin:"0 0 6px", letterSpacing:"-1.5px", lineHeight:1 }}>Forever Drawings</h1>
+        <p style={{ color:muted, margin:0, fontSize:"15px", fontStyle:"italic" }}>Preserve every drawing, forever.</p>
       </div>
-      <div style={{ background:"white", borderRadius:"20px", padding:"36px", width:"100%", maxWidth:"400px", boxShadow:"0 8px 40px rgba(45,27,0,0.12)" }}>
-        <div style={{ display:"flex", background:"#FFF8F0", borderRadius:"10px", padding:"4px", marginBottom:"28px" }}>
+
+      <div style={{ background:"white", borderRadius:"20px", padding:"32px", width:"100%", maxWidth:"400px", boxShadow:"0 8px 40px rgba(45,27,0,0.12)" }}>
+        {/* Mode toggle */}
+        <div style={{ display:"flex", background:"#FFF8F0", borderRadius:"10px", padding:"4px", marginBottom:"24px" }}>
           {[["login","Sign In"],["signup","Create Vault"]].map(([m,label]) => (
-            <button key={m} onClick={() => setMode(m)} style={{ flex:1, padding:"10px", border:"none", borderRadius:"8px", cursor:"pointer", background:mode===m?"white":"transparent", color:mode===m?ink:muted, fontWeight:mode===m?700:400, fontFamily:ff, fontSize:"14px", boxShadow:mode===m?"0 2px 8px rgba(45,27,0,0.1)":"none", transition:"all .2s" }}>{label}</button>
+            <button key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex:1, padding:"10px", border:"none", borderRadius:"8px", cursor:"pointer", background:mode===m?"white":"transparent", color:mode===m?ink:muted, fontWeight:mode===m?700:400, fontFamily:ff, fontSize:"14px", boxShadow:mode===m?"0 2px 8px rgba(45,27,0,0.1)":"none", transition:"all .2s" }}>{label}</button>
           ))}
         </div>
+
+        {/* Signup fields */}
         {mode==="signup" && (
           <div style={{ marginBottom:"14px" }}>
             <label style={{ display:"block", fontSize:"11px", fontWeight:700, color:muted, marginBottom:"5px", fontFamily:ff, textTransform:"uppercase", letterSpacing:"0.4px" }}>Your name</label>
             <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex Johnson" style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${border}`, borderRadius:"10px", fontSize:"15px", fontFamily:ff, background:"#FFFDF9", color:ink, outline:"none", boxSizing:"border-box" }}/>
           </div>
         )}
+
         <div style={{ marginBottom:"14px" }}>
           <label style={{ display:"block", fontSize:"11px", fontWeight:700, color:muted, marginBottom:"5px", fontFamily:ff, textTransform:"uppercase", letterSpacing:"0.4px" }}>Email address</label>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" type="email" style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${border}`, borderRadius:"10px", fontSize:"15px", fontFamily:ff, background:"#FFFDF9", color:ink, outline:"none", boxSizing:"border-box" }}/>
         </div>
-        <div style={{ marginBottom:"14px" }}>
-          <label style={{ display:"block", fontSize:"11px", fontWeight:700, color:muted, marginBottom:"5px", fontFamily:ff, textTransform:"uppercase", letterSpacing:"0.4px" }}>Password</label>
-          <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" type="password" style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${border}`, borderRadius:"10px", fontSize:"15px", fontFamily:ff, background:"#FFFDF9", color:ink, outline:"none", boxSizing:"border-box" }}/>
+
+        <div style={{ marginBottom:mode==="signup"?"14px":"18px" }}>
+          <label style={{ display:"block", fontSize:"11px", fontWeight:700, color:muted, marginBottom:"5px", fontFamily:ff, textTransform:"uppercase", letterSpacing:"0.4px" }}>Password{mode==="signup"&&<span style={{ fontWeight:400, textTransform:"none", letterSpacing:0 }}> (min. 8 characters)</span>}</label>
+          <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" type="password" style={{ width:"100%", padding:"12px 14px", border:`1.5px solid ${pass.length>0&&pass.length<8&&mode==="signup"?"#DC2626":border}`, borderRadius:"10px", fontSize:"15px", fontFamily:ff, background:"#FFFDF9", color:ink, outline:"none", boxSizing:"border-box" }}/>
+          {pass.length>0&&pass.length<8&&mode==="signup"&&<p style={{ color:"#DC2626", fontSize:11, margin:"4px 0 0", fontFamily:ff }}>Need {8-pass.length} more character{8-pass.length!==1?"s":""}</p>}
         </div>
+
+        {/* Cloudflare Turnstile — signup only */}
+        {mode==="signup"&&(
+          <div style={{ marginBottom:"16px" }}>
+            <div ref={turnstileRef} style={{ minHeight:65 }}/>
+            {!turnstileOk&&<p style={{ fontSize:11, color:muted, margin:"6px 0 0", fontFamily:ff }}>Complete the security check above to continue.</p>}
+          </div>
+        )}
+
         {error && <p style={{ color:"#B91C1C", fontSize:"13px", margin:"0 0 12px" }}>{error}</p>}
-        <button onClick={submit} disabled={loading} style={{ width:"100%", padding:"14px", background:loading?"#F0E0D0":orange, color:"white", border:"none", borderRadius:"12px", fontSize:"16px", fontWeight:700, cursor:loading?"default":"pointer", fontFamily:ff, boxShadow:"0 4px 16px rgba(232,100,10,0.3)" }}>
+
+        <button
+          onClick={mode==="login"?submitLogin:submitSignup}
+          disabled={loading||(mode==="signup"&&!turnstileOk)}
+          style={{ width:"100%", padding:"14px", background:loading||(mode==="signup"&&!turnstileOk)?"#F0E0D0":orange, color:"white", border:"none", borderRadius:"12px", fontSize:"16px", fontWeight:700, cursor:loading||(mode==="signup"&&!turnstileOk)?"default":"pointer", fontFamily:ff, boxShadow:"0 4px 16px rgba(232,100,10,0.3)", transition:"all .2s" }}>
           {loading ? "Please wait…" : mode==="login" ? "Sign In →" : "Create Your Vault →"}
         </button>
-        <p style={{ textAlign:"center", color:muted, fontSize:"12px", marginTop:"20px" }}>
-          {mode==="login" ? "New here? Switch to Create Vault above." : "Already have a vault? Switch to Sign In above."}
-        </p>
+
+        {mode==="signup"&&(
+          <p style={{ textAlign:"center", color:muted, fontSize:11, marginTop:14, fontFamily:ff, lineHeight:1.6 }}>
+            We'll send a verification code to confirm your email. By creating a vault you agree to our{" "}
+            <a href="/terms" style={{ color:orange }}>Terms of Service</a>.
+          </p>
+        )}
+
+        {mode==="login"&&(
+          <div style={{ textAlign:"center", marginTop:14 }}>
+            <a href="#" style={{ color:orange, fontSize:13, fontFamily:ff }}>Forgot password?</a>
+          </div>
+        )}
       </div>
-      <p style={{ marginTop:"32px", color:muted, fontSize:"12px", textAlign:"center", fontFamily:ff }}>© {new Date().getFullYear()} Forever Drawings · foreverdrawings.com</p>
+      <p style={{ marginTop:"28px", color:muted, fontSize:"12px", textAlign:"center", fontFamily:ff }}>© {new Date().getFullYear()} Forever Drawings · foreverdrawings.com</p>
     </div>
   );
 }
