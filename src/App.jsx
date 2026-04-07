@@ -1045,44 +1045,6 @@ function AlbumsGrid({albums,children,onOpen,onCreate,onDelete}) {
   );
 }
 
-function ArtworkGrid({artworks,tags,onTagEdit}) {
-  const [active,setActive]=useState([]);
-  const filtered=active.length===0?artworks:artworks.filter(a=>active.every(slug=>a.tags?.some(t=>t.slug===slug)));
-  const relevant=tags.filter(tag=>artworks.some(a=>a.tags?.some(t=>t.id===tag.id)));
-  return (
-    <div>
-      {relevant.length>0&&(
-        <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:18}}>
-          {relevant.map(tag=>(
-            <button key={tag.id} onClick={()=>setActive(p=>p.includes(tag.slug)?p.filter(s=>s!==tag.slug):[...p,tag.slug])} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:20,border:`1.5px solid ${active.includes(tag.slug)?tag.color:T.border}`,background:active.includes(tag.slug)?tag.color+"18":T.white,color:active.includes(tag.slug)?tag.color:T.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:T.ff,transition:"all .15s"}}>
-              {tag.icon} {tag.name}
-            </button>
-          ))}
-          {active.length>0&&<button onClick={()=>setActive([])} style={{padding:"5px 12px",borderRadius:20,border:"none",background:"none",color:T.muted,fontSize:12,cursor:"pointer",fontFamily:T.ff}}>Clear ✕</button>}
-        </div>
-      )}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(148px, 1fr))",gap:13}}>
-        {filtered.map(art=>(
-          <div key={art.id} style={{borderRadius:16,overflow:"hidden",background:T.white,boxShadow:T.shadow,cursor:"pointer"}}>
-            <div style={{aspectRatio:"4/5",position:"relative",overflow:"hidden"}}>
-              <img src={art.url} alt={art.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-              <div style={{position:"absolute",inset:0,background:"linear-gradient(transparent 55%, rgba(20,12,8,0.75))",pointerEvents:"none"}}/>
-              <div style={{position:"absolute",bottom:8,left:8,right:8}}>
-                <div style={{color:"white",fontSize:11,fontWeight:700,fontFamily:T.ff,marginBottom:4}}>{art.title}</div>
-                <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                  {art.tags?.slice(0,2).map(tag=><span key={tag.id} style={{background:tag.color,color:"white",borderRadius:20,padding:"1px 7px",fontSize:9,fontWeight:700,fontFamily:T.ff}}>{tag.icon} {tag.name}</span>)}
-                </div>
-              </div>
-              {art.is_favorite&&<div style={{position:"absolute",top:8,left:8,fontSize:14}}>❤️</div>}
-              <button onClick={e=>{e.stopPropagation();onTagEdit(art);}} style={{position:"absolute",top:8,right:8,background:"rgba(255,255,255,0.88)",border:"none",borderRadius:20,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:T.ff,fontWeight:700}}>🏷</button>
-            </div>
-          </div>
-        ))}
-        {filtered.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"48px 20px",color:T.muted,fontFamily:T.ff}}><div style={{fontSize:44,marginBottom:12}}>🔍</div><p>No artworks match these tags.</p></div>}
-      </div>
-    </div>
-  );
-}
 
 // ─── Carousel Modal ───────────────────────────────────────────────────────────
 function CarouselModal({artworks, startIndex, onClose, onToggleFavorite}) {
