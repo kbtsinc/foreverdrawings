@@ -910,29 +910,318 @@ function ArtworkGrid({artworks,tags,onTagEdit}) {
   );
 }
 
+// ─── Carousel Modal ───────────────────────────────────────────────────────────
+function CarouselModal({artworks, startIndex, onClose, onToggleFavorite}) {
+  const [idx,setIdx]=useState(startIndex);
+  const art=artworks[idx];
+  useEffect(()=>{
+    const h=e=>{
+      if(e.key==="ArrowLeft") setIdx(i=>Math.max(0,i-1));
+      if(e.key==="ArrowRight") setIdx(i=>Math.min(artworks.length-1,i+1));
+      if(e.key==="Escape") onClose();
+    };
+    window.addEventListener("keydown",h);
+    return ()=>window.removeEventListener("keydown",h);
+  },[artworks.length,onClose]);
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(15,7,0,0.94)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:1000,fontFamily:T.ff}}>
+      <div style={{position:"absolute",top:16,right:16,display:"flex",gap:10}}>
+        <button onClick={()=>onToggleFavorite(art.id)} style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",border:"none",cursor:"pointer",fontSize:20}}>
+          {art.is_favorite?"❤️":"🤍"}
+        </button>
+        <button onClick={onClose} style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",border:"none",color:"white",fontSize:20,cursor:"pointer"}}>✕</button>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:16,padding:"0 20px",width:"100%",maxWidth:820}}>
+        <button onClick={()=>setIdx(i=>i-1)} disabled={idx===0} style={{width:50,height:50,borderRadius:"50%",border:"none",background:"rgba(255,255,255,0.12)",color:"white",fontSize:26,cursor:idx>0?"pointer":"default",flexShrink:0,opacity:idx===0?0.2:1}}>‹</button>
+        <div style={{flex:1,textAlign:"center"}}>
+          <img src={art.url} alt={art.title} style={{maxHeight:"62vh",maxWidth:"100%",borderRadius:12,boxShadow:"0 24px 60px rgba(0,0,0,0.6)"}}/>
+          <div style={{marginTop:20}}>
+            <h2 style={{color:"white",margin:"0 0 8px",fontSize:22,fontFamily:T.ff}}>{art.title}</h2>
+            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+              {art.tags?.map(tag=><span key={tag.id} style={{background:tag.color,color:"white",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700,fontFamily:T.ff}}>{tag.icon} {tag.name}</span>)}
+            </div>
+          </div>
+        </div>
+        <button onClick={()=>setIdx(i=>i+1)} disabled={idx===artworks.length-1} style={{width:50,height:50,borderRadius:"50%",border:"none",background:"rgba(255,255,255,0.12)",color:"white",fontSize:26,cursor:idx<artworks.length-1?"pointer":"default",flexShrink:0,opacity:idx===artworks.length-1?0.2:1}}>›</button>
+      </div>
+      <div style={{display:"flex",gap:6,marginTop:20,overflowX:"auto",maxWidth:"90vw",padding:"0 10px 10px"}}>
+        {artworks.map((a,i)=>(
+          <img key={a.id} src={a.url} alt={a.title} onClick={()=>setIdx(i)} style={{width:50,height:50,objectFit:"cover",borderRadius:8,cursor:"pointer",opacity:i===idx?1:0.4,border:i===idx?`2.5px solid ${T.orange}`:"2.5px solid transparent",flexShrink:0,transition:"all .2s"}}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Share Modal ──────────────────────────────────────────────────────────────
+function ShareModal({selectedIds,artworks,onClose}) {
+  const selected=artworks.filter(a=>selectedIds.has(a.id));
+  const [copied,setCopied]=useState(false);
+  const [shareUrl,setShareUrl]=useState("");
+  const [generating,setGenerating]=useState(false);
+
+  async function generateLink(){
+    setGenerating(true);
+    await new Promise(r=>setTimeout(r,700));
+    const token=Math.random().toString(36).slice(2,12);
+    setShareUrl(`${window.location.origin}/share/${token}`);
+    setGenerating(false);
+  }
+  function copy(){
+    navigator.clipboard.writeText(shareUrl||window.location.href);
+    setCopied(true);
+    setTimeout(()=>setCopied(false),2500);
+  }
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:20,padding:32,width:"100%",maxWidth:480,boxShadow:T.shadowMd,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+          <h2 style={{margin:0,fontSize:20,color:T.ink,fontFamily:T.ff,fontWeight:900}}>Share {selected.length} Drawing{selected.length!==1?"s":""}</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:T.muted}}>✕</button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:22,flexWrap:"wrap"}}>
+          {selected.map(a=>(
+            <div key={a.id} style={{position:"relative"}}>
+              <img src={a.url} style={{width:70,height:70,objectFit:"cover",borderRadius:10}} alt={a.title}/>
+              <div style={{position:"absolute",bottom:4,left:4,right:4,background:"rgba(0,0,0,0.55)",borderRadius:4,padding:"2px 4px"}}>
+                <span style={{color:"white",fontSize:9,fontFamily:T.ff}}>{a.title}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {!shareUrl?(
+          <button onClick={generateLink} disabled={generating} style={{width:"100%",padding:"13px",background:generating?"#F0E0D0":T.orange,color:"white",border:"none",borderRadius:12,fontSize:14,fontWeight:700,cursor:generating?"default":"pointer",fontFamily:T.ff,marginBottom:14}}>
+            {generating?"Creating link…":"✨ Create Share Link"}
+          </button>
+        ):(
+          <div style={{background:T.bg,borderRadius:12,padding:"12px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
+            <input readOnly value={shareUrl} style={{flex:1,border:"none",background:"none",fontSize:12,color:T.ink,fontFamily:T.ff,outline:"none"}}/>
+            <button onClick={copy} style={{background:copied?"#2A7A2A":T.orange,color:"white",border:"none",borderRadius:8,padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:T.ff,whiteSpace:"nowrap"}}>
+              {copied?"✓ Copied":"Copy"}
+            </button>
+          </div>
+        )}
+        <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",textAlign:"center",fontFamily:T.ff}}>Link expires in 30 days · View-only · No account needed</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {[{icon:"📧",label:"Email"},{icon:"💬",label:"Text Message"}].map(opt=>(
+            <button key={opt.label} style={{padding:"13px",border:`1.5px solid ${T.border}`,borderRadius:12,background:T.white,cursor:"pointer",fontFamily:T.ff,fontSize:13,fontWeight:600,color:T.ink,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <span style={{fontSize:18}}>{opt.icon}</span>{opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ArtworkGrid with carousel + select + share ───────────────────────────────
+function ArtworkGrid({artworks,tags,onTagEdit}) {
+  const [active,setActive]=useState([]);
+  const [selected,setSelected]=useState(new Set());
+  const [carousel,setCarousel]=useState(null);
+  const [showShare,setShowShare]=useState(false);
+
+  const filtered=active.length===0?artworks:artworks.filter(a=>active.every(slug=>a.tags?.some(t=>t.slug===slug)));
+  const relevant=tags.filter(tag=>artworks.some(a=>a.tags?.some(t=>t.id===tag.id)));
+
+  function toggleSelect(id){
+    setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):(n.size<5&&n.add(id));return n;});
+  }
+
+  return (
+    <div>
+      {/* Tag filters */}
+      {relevant.length>0&&(
+        <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:18}}>
+          {relevant.map(tag=>(
+            <button key={tag.id} onClick={()=>setActive(p=>p.includes(tag.slug)?p.filter(s=>s!==tag.slug):[...p,tag.slug])} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:20,border:`1.5px solid ${active.includes(tag.slug)?tag.color:T.border}`,background:active.includes(tag.slug)?tag.color+"18":T.white,color:active.includes(tag.slug)?tag.color:T.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:T.ff,transition:"all .15s"}}>
+              {tag.icon} {tag.name}
+            </button>
+          ))}
+          {active.length>0&&<button onClick={()=>setActive([])} style={{padding:"5px 12px",borderRadius:20,border:"none",background:"none",color:T.muted,fontSize:12,cursor:"pointer",fontFamily:T.ff}}>Clear ✕</button>}
+        </div>
+      )}
+
+      {/* Select/Share toolbar */}
+      {selected.size>0&&(
+        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16,padding:"12px 16px",background:"#FFF5EE",borderRadius:12,border:`1.5px solid ${T.border}`}}>
+          <span style={{fontFamily:T.ff,fontSize:13,color:T.muted,flex:1}}>{selected.size} of 5 selected</span>
+          <button onClick={()=>setShowShare(true)} style={{background:T.orange,color:"white",border:"none",borderRadius:20,padding:"8px 18px",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:T.ff}}>Share Selected</button>
+          <button onClick={()=>setSelected(new Set())} style={{background:"none",border:`1.5px solid ${T.border}`,borderRadius:20,padding:"7px 14px",color:T.muted,fontSize:12,cursor:"pointer",fontFamily:T.ff}}>Clear</button>
+        </div>
+      )}
+
+      {/* Grid */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(148px, 1fr))",gap:13}}>
+        {filtered.map((art,i)=>(
+          <div key={art.id} style={{borderRadius:16,overflow:"hidden",background:T.white,boxShadow:selected.has(art.id)?`0 0 0 3px ${T.orange}, ${T.shadow}`:T.shadow,cursor:"pointer",transition:"box-shadow .15s"}}>
+            <div style={{aspectRatio:"4/5",position:"relative",overflow:"hidden"}} onClick={()=>setCarousel(i)}>
+              <img src={art.url} alt={art.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(transparent 55%, rgba(20,12,8,0.75))",pointerEvents:"none"}}/>
+              <div style={{position:"absolute",bottom:8,left:8,right:8}}>
+                <div style={{color:"white",fontSize:11,fontWeight:700,fontFamily:T.ff,marginBottom:4}}>{art.title}</div>
+                <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                  {art.tags?.slice(0,2).map(tag=><span key={tag.id} style={{background:tag.color,color:"white",borderRadius:20,padding:"1px 7px",fontSize:9,fontWeight:700,fontFamily:T.ff}}>{tag.icon} {tag.name}</span>)}
+                </div>
+              </div>
+              {art.is_favorite&&<div style={{position:"absolute",top:8,left:8,fontSize:14}}>❤️</div>}
+              {/* Select button */}
+              <button onClick={e=>{e.stopPropagation();toggleSelect(art.id);}} style={{position:"absolute",top:8,right:8,width:26,height:26,borderRadius:"50%",background:selected.has(art.id)?T.orange:"rgba(255,255,255,0.88)",border:selected.has(art.id)?"none":"1.5px solid rgba(255,255,255,0.5)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"white",fontWeight:700,boxShadow:"0 2px 6px rgba(0,0,0,0.2)"}}>
+                {selected.has(art.id)?"✓":""}
+              </button>
+              {/* Tag button */}
+              <button onClick={e=>{e.stopPropagation();onTagEdit(art);}} style={{position:"absolute",bottom:8,right:8,background:"rgba(255,255,255,0.88)",border:"none",borderRadius:20,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:T.ff,fontWeight:700}}>🏷</button>
+            </div>
+          </div>
+        ))}
+        {filtered.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"48px 20px",color:T.muted,fontFamily:T.ff}}><div style={{fontSize:44,marginBottom:12}}>🔍</div><p>No artworks match these tags.</p></div>}
+      </div>
+
+      {carousel!==null&&(
+        <CarouselModal
+          artworks={filtered}
+          startIndex={carousel}
+          onClose={()=>setCarousel(null)}
+          onToggleFavorite={()=>{}}
+        />
+      )}
+      {showShare&&<ShareModal selectedIds={selected} artworks={artworks} onClose={()=>setShowShare(false)}/>}
+    </div>
+  );
+}
+
+
+// ─── Gallery (main app screen) ────────────────────────────────────────────────
+function Gallery({user, onLogout}) {
+  const [children,setChildren]=useState(CHILDREN);
+  const [tags,setTags]=useState(TAGS);
+  const [albums,setAlbums]=useState(ALBUMS);
+  const [artworks,setArtworks]=useState(ALL_ARTWORKS);
+  const [activeChild,setActiveChild]=useState("all");
+  const [activeTab,setActiveTab]=useState("gallery");
+  const [showAddChild,setShowAddChild]=useState(false);
+  const [showTagMgr,setShowTagMgr]=useState(false);
+  const [showNewAlbum,setShowNewAlbum]=useState(false);
+  const [tagEditArt,setTagEditArt]=useState(null);
+  const [openAlbum,setOpenAlbum]=useState(null);
+
+  const visibleArtworks=activeChild==="all"?artworks:artworks.filter(a=>a.child_id===activeChild);
+  const visibleAlbums=activeChild==="all"?albums:albums.filter(a=>a.child_id===activeChild||!a.child_id);
+  const activeChildObj=children.find(c=>c.id===activeChild);
+
+  function handleTagSave(artworkId,tagIds){setArtworks(p=>p.map(a=>a.id===artworkId?{...a,tags:tags.filter(t=>tagIds.includes(t.id))}:a));}
+
+  function handleAlbumOpen(album){
+    let arts=[];
+    if(album.is_smart&&album.smart_rules?.tags){
+      const slugs=album.smart_rules.tags;
+      arts=artworks.filter(a=>(album.child_id?a.child_id===album.child_id:true)&&a.tags?.some(t=>slugs.includes(t.slug)));
+    } else {
+      arts=artworks.filter(a=>album.child_id?a.child_id===album.child_id:true).slice(0,album.count||6);
+    }
+    setOpenAlbum({...album,artworks:arts});
+  }
+
+  return (
+    <div style={{background:T.bg,minHeight:"100vh",fontFamily:T.ff}}>
+      {/* Header */}
+      <div style={{background:T.white,boxShadow:T.shadow,position:"sticky",top:0,zIndex:100}}>
+        <div style={{maxWidth:960,margin:"0 auto",padding:"14px 20px",display:"flex",alignItems:"center",gap:12}}>
+          <svg width="28" height="28" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill={T.orange}/><rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/><g transform="translate(20,15) rotate(18)"><rect x="0" y="0" width="8" height="36" rx="2" fill="#2D1B00"/><polygon points="0,36 8,36 4,46" fill="#F4C88C"/></g></svg>
+          <span style={{fontSize:17,fontWeight:900,color:T.ink,letterSpacing:"-0.5px"}}>Forever Drawings</span>
+          <div style={{flex:1}}/>
+          <button onClick={()=>setShowTagMgr(true)} style={{background:"none",border:`1.5px solid ${T.border}`,borderRadius:20,padding:"7px 14px",color:T.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:T.ff}}>🏷 Tags</button>
+          <button onClick={onLogout} style={{background:"none",border:`1.5px solid ${T.border}`,borderRadius:20,padding:"7px 14px",color:T.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:T.ff}}>Sign Out</button>
+        </div>
+        {/* Children tabs */}
+        <div style={{maxWidth:960,margin:"0 auto",padding:"0 20px 14px",display:"flex",gap:8,alignItems:"center",overflowX:"auto"}}>
+          <button onClick={()=>setActiveChild("all")} style={{display:"flex",alignItems:"center",gap:7,padding:"8px 16px",borderRadius:20,border:`1.5px solid ${activeChild==="all"?T.orange:T.border}`,background:activeChild==="all"?"#FFF5EE":T.white,color:activeChild==="all"?T.orange:T.muted,cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:T.ff,whiteSpace:"nowrap",flexShrink:0}}>
+            👨‍👩‍👧‍👦 All
+            <span style={{background:T.orange+"22",color:T.orange,borderRadius:10,padding:"1px 7px",fontSize:11}}>{artworks.length}</span>
+          </button>
+          {children.map(child=>{
+            const count=artworks.filter(a=>a.child_id===child.id).length;
+            const active=activeChild===child.id;
+            return (
+              <button key={child.id} onClick={()=>setActiveChild(child.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 16px 7px 10px",borderRadius:20,border:`1.5px solid ${active?child.avatar_color:T.border}`,background:active?child.avatar_color+"14":T.white,color:active?child.avatar_color:T.muted,cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:T.ff,whiteSpace:"nowrap",flexShrink:0,transition:"all .15s"}}>
+                <ChildAvatar child={child} size={26} active={active}/>
+                {child.name}
+                <span style={{background:active?child.avatar_color+"22":T.border,color:active?child.avatar_color:T.muted,borderRadius:10,padding:"1px 7px",fontSize:11}}>{count}</span>
+              </button>
+            );
+          })}
+          <button onClick={()=>setShowAddChild(true)} style={{width:36,height:36,borderRadius:"50%",border:`2px dashed ${T.border}`,background:"none",cursor:"pointer",fontSize:18,color:T.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        </div>
+        {/* Tabs */}
+        <div style={{maxWidth:960,margin:"0 auto",padding:"0 20px",display:"flex",borderTop:`1px solid ${T.border}`}}>
+          {[["gallery","🖼️ Gallery"],["albums","📁 Albums"]].map(([tab,label])=>(
+            <button key={tab} onClick={()=>setActiveTab(tab)} style={{padding:"11px 20px",border:"none",background:"none",color:activeTab===tab?T.orange:T.muted,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:T.ff,borderBottom:`2.5px solid ${activeTab===tab?T.orange:"transparent"}`,transition:"all .15s"}}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{maxWidth:960,margin:"0 auto",padding:20}}>
+        {activeChildObj&&(
+          <div style={{display:"flex",alignItems:"center",gap:16,background:T.white,borderRadius:16,padding:"18px 22px",marginBottom:22,boxShadow:T.shadow,borderLeft:`5px solid ${activeChildObj.avatar_color}`}}>
+            <ChildAvatar child={activeChildObj} size={52}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:22,fontWeight:900,color:T.ink,fontFamily:T.ff}}>{activeChildObj.name}</div>
+              {activeChildObj.school_name&&<div style={{fontSize:13,color:T.muted,fontFamily:T.ff}}>{activeChildObj.school_name}</div>}
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:26,fontWeight:900,color:activeChildObj.avatar_color,fontFamily:T.ff}}>{visibleArtworks.length}</div>
+              <div style={{fontSize:11,color:T.muted,fontFamily:T.ff}}>drawings</div>
+            </div>
+          </div>
+        )}
+        {activeTab==="gallery"&&<ArtworkGrid artworks={visibleArtworks} tags={tags} onTagEdit={setTagEditArt}/>}
+        {activeTab==="albums"&&<AlbumsGrid albums={visibleAlbums} children={children} onOpen={handleAlbumOpen} onCreate={()=>setShowNewAlbum(true)} onDelete={id=>setAlbums(p=>p.filter(a=>a.id!==id))}/>}
+      </div>
+
+      {showAddChild&&<AddChildModal onClose={()=>setShowAddChild(false)} onAdd={c=>{setChildren(p=>[...p,c]);setShowAddChild(false);}}/>}
+      {showTagMgr&&<TagManagerModal tags={tags} onClose={()=>setShowTagMgr(false)} onChange={setTags}/>}
+      {showNewAlbum&&<CreateAlbumModal children={children} tags={tags} childId={activeChild!=="all"?activeChild:""} onClose={()=>setShowNewAlbum(false)} onCreate={a=>{setAlbums(p=>[...p,a]);setShowNewAlbum(false);}}/>}
+      {tagEditArt&&<ArtworkTagEditor artwork={tagEditArt} tags={tags} onSave={handleTagSave} onClose={()=>setTagEditArt(null)}/>}
+
+      {openAlbum&&(
+        <div style={{position:"fixed",inset:0,background:T.bg,zIndex:500,overflowY:"auto"}}>
+          <div style={{maxWidth:960,margin:"0 auto",padding:20}}>
+            <button onClick={()=>setOpenAlbum(null)} style={{background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:15,fontFamily:T.ff,fontWeight:700,marginBottom:20}}>← Back to Albums</button>
+            <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:26}}>
+              <div style={{width:56,height:56,borderRadius:14,background:openAlbum.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>{openAlbum.icon}</div>
+              <div>
+                <div style={{fontSize:24,fontWeight:900,color:T.ink,fontFamily:T.ff}}>{openAlbum.name}</div>
+                <div style={{fontSize:13,color:T.muted,fontFamily:T.ff}}>{openAlbum.artworks?.length||0} drawings{openAlbum.is_smart?" · Smart Album":""}</div>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(148px, 1fr))",gap:13}}>
+              {(openAlbum.artworks||[]).map((art,i)=>(
+                <div key={art.id} style={{borderRadius:16,overflow:"hidden",boxShadow:T.shadow,aspectRatio:"4/5",position:"relative",cursor:"pointer"}}>
+                  <img src={art.url} alt={art.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(20,12,8,0.75))",padding:"20px 10px 10px"}}>
+                    <div style={{color:"white",fontSize:11,fontWeight:700,fontFamily:T.ff}}>{art.title}</div>
+                  </div>
+                </div>
+              ))}
+              {openAlbum.artworks?.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"48px 20px",color:T.muted,fontFamily:T.ff}}><div style={{fontSize:44,marginBottom:12}}>📂</div><p>No drawings match this album's rules yet.</p></div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Root App with routing ────────────────────────────────────────────────────
 export default function App() {
-  const [screen, setScreen] = useState("home"); // "home" | "auth" | "app"
+  const [screen, setScreen] = useState("home");
   const [user,   setUser]   = useState(null);
 
-  function handleLogin(loggedInUser) {
-    setUser(loggedInUser);
-    setScreen("app");
-  }
+  function handleLogin(loggedInUser) { setUser(loggedInUser); setScreen("app"); }
+  function handleLogout() { setUser(null); setScreen("home"); }
 
-  function handleLogout() {
-    setUser(null);
-    setScreen("home");
-  }
-
-  if (screen === "home") {
-    return <HomePage onLogin={() => setScreen("auth")} />;
-  }
-
-  if (screen === "auth") {
-    return <AuthScreen onLogin={handleLogin} onBack={() => setScreen("home")} />;
-  }
-
+  if (screen === "home") return <HomePage onLogin={() => setScreen("auth")} />;
+  if (screen === "auth") return <AuthScreen onLogin={handleLogin} onBack={() => setScreen("home")} />;
   return <Gallery user={user} onLogout={handleLogout} />;
 }
