@@ -142,29 +142,203 @@ function Hero({ onLogin }) {
           <p style={{ fontFamily: S.ff, fontSize: 13, color: C.muted, marginTop: 16, fontStyle: "italic" }}>No credit card required · Free forever for families</p>
         </div>
 
-        {/* Right — artwork mosaic */}
+        {/* Right — kid drawing cards */}
         <div style={{ position: "relative", height: 580 }}>
-          {[
-            { src:"https://picsum.photos/seed/draw1/280/340", top:0,   left:60,  rotate:-4, label:"Sunshine Dragon", child:"Emma, 1st Grade" },
-            { src:"https://picsum.photos/seed/draw2/240/300", top:60,  left:240, rotate:3,  label:"My Family",      child:"Emma, 1st Grade" },
-            { src:"https://picsum.photos/seed/draw3/220/280", top:220, left:20,  rotate:-2, label:"Space Rocket",   child:"Liam, K" },
-            { src:"https://picsum.photos/seed/draw4/200/260", top:280, left:200, rotate:5,  label:"Spring Flowers", child:"Sofia, Pre-K" },
-          ].map((card, i) => (
-            <div key={i} style={{
-              position: "absolute", top: card.top, left: card.left,
-              transform: `rotate(${card.rotate}deg)`,
-              background: C.white, borderRadius: 8, padding: 10,
-              boxShadow: "0 8px 32px rgba(45,27,0,0.14)",
-              animation: `float${i} 4s ease-in-out infinite`,
-              animationDelay: `${i * 0.8}s`,
-            }}>
-              <img src={card.src} alt={card.label} style={{ width: card.src.includes("280") ? 180 : 150, height: card.src.includes("340") ? 220 : 180, objectFit: "cover", borderRadius: 4, display: "block" }} />
-              <div style={{ paddingTop: 8 }}>
-                <div style={{ fontFamily: S.ffHand, fontSize: 15, fontWeight: 700, color: C.ink }}>{card.label}</div>
-                <div style={{ fontFamily: S.ff, fontSize: 11, color: C.muted }}>{card.child}</div>
-              </div>
+
+          {/* Card 1 — Sunshine Dragon */}
+          <div style={{ position:"absolute", top:0, left:60, transform:"rotate(-4deg)", background:C.white, borderRadius:8, padding:10, boxShadow:"0 8px 32px rgba(45,27,0,0.14)", animation:"float0 4s ease-in-out infinite" }}>
+            <svg width="180" height="220" viewBox="0 0 180 220" style={{ display:"block", borderRadius:4, background:"#FFF9C4" }}>
+              {/* Sky */}
+              <rect width="180" height="220" fill="#FFF9C4"/>
+              {/* Sun */}
+              <circle cx="150" cy="35" r="22" fill="#FFDA3D" stroke="#F5A623" strokeWidth="2.5"/>
+              <line x1="150" y1="5"  x2="150" y2="0"  stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="170" y1="15" x2="175" y2="10" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="178" y1="35" x2="183" y2="35" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="170" y1="55" x2="175" y2="60" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+              {/* Dragon body */}
+              <ellipse cx="90" cy="130" rx="45" ry="35" fill="#7CC8F0" stroke="#4A9EC4" strokeWidth="2.5"/>
+              {/* Dragon head */}
+              <ellipse cx="55" cy="100" rx="28" ry="22" fill="#7CC8F0" stroke="#4A9EC4" strokeWidth="2.5"/>
+              {/* Eye */}
+              <circle cx="48" cy="95" r="5" fill="white" stroke="#4A9EC4" strokeWidth="1.5"/>
+              <circle cx="48" cy="95" r="2.5" fill="#333"/>
+              {/* Nostril */}
+              <circle cx="38" cy="102" r="2.5" fill="#4A9EC4"/>
+              {/* Mouth smile */}
+              <path d="M38,108 Q48,115 58,108" fill="none" stroke="#4A9EC4" strokeWidth="2" strokeLinecap="round"/>
+              {/* Horn */}
+              <polygon points="60,80 68,62 76,80" fill="#FF8EC4" stroke="#D060A0" strokeWidth="1.5"/>
+              {/* Wings */}
+              <path d="M100,110 Q140,80 160,100 Q140,115 100,120 Z" fill="#FF8EC4" stroke="#D060A0" strokeWidth="2"/>
+              {/* Tail */}
+              <path d="M130,150 Q160,160 170,185 Q155,175 145,180" fill="none" stroke="#4A9EC4" strokeWidth="3" strokeLinecap="round"/>
+              {/* Legs */}
+              <line x1="70"  y1="160" x2="65"  y2="185" stroke="#4A9EC4" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="90"  y1="163" x2="88"  y2="190" stroke="#4A9EC4" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="110" y1="163" x2="112" y2="190" stroke="#4A9EC4" strokeWidth="4" strokeLinecap="round"/>
+              {/* Stars */}
+              <text x="15" y="40" fontSize="18" fill="#FFDA3D">★</text>
+              <text x="155" y="85" fontSize="12" fill="#FF8EC4">★</text>
+              <text x="20" y="80" fontSize="10" fill="#B0D0FF">★</text>
+              {/* Grass */}
+              <path d="M0,200 Q45,188 90,200 Q135,212 180,200 L180,220 L0,220 Z" fill="#8BC34A"/>
+            </svg>
+            <div style={{ paddingTop:8 }}>
+              <div style={{ fontFamily:S.ffHand, fontSize:14, fontWeight:700, color:C.ink }}>Sunshine Dragon</div>
+              <div style={{ fontFamily:S.ff, fontSize:11, color:C.muted }}>Emma, 1st Grade</div>
             </div>
-          ))}
+          </div>
+
+          {/* Card 2 — My Family */}
+          <div style={{ position:"absolute", top:60, left:250, transform:"rotate(3deg)", background:C.white, borderRadius:8, padding:10, boxShadow:"0 8px 32px rgba(45,27,0,0.14)", animation:"float1 4s ease-in-out infinite", animationDelay:"0.8s" }}>
+            <svg width="150" height="180" viewBox="0 0 150 180" style={{ display:"block", borderRadius:4, background:"#E8F5E9" }}>
+              <rect width="150" height="180" fill="#E8F5E9"/>
+              {/* Sky */}
+              <rect width="150" height="100" fill="#B3E5FC"/>
+              {/* Sun */}
+              <circle cx="125" cy="25" r="16" fill="#FFDA3D"/>
+              {/* Ground */}
+              <rect y="100" width="150" height="80" fill="#8BC34A"/>
+              {/* House */}
+              <rect x="45" y="75" width="60" height="55" fill="#FFCCBC" stroke="#E8640A" strokeWidth="2"/>
+              <polygon points="35,78 115,78 75,45" fill="#E8640A" stroke="#C85008" strokeWidth="2"/>
+              {/* Door */}
+              <rect x="62" y="100" width="18" height="30" rx="2" fill="#8B5E3C" stroke="#6B4020" strokeWidth="1.5"/>
+              {/* Windows */}
+              <rect x="50" y="83" width="14" height="12" rx="1" fill="#B3E5FC" stroke="#4A9EC4" strokeWidth="1.5"/>
+              <rect x="88" y="83" width="14" height="12" rx="1" fill="#B3E5FC" stroke="#4A9EC4" strokeWidth="1.5"/>
+              {/* Dad */}
+              <circle cx="18" cy="75" r="9" fill="#FFCC80" stroke="#E8640A" strokeWidth="1.5"/>
+              <rect x="11" y="84" width="14" height="20" rx="3" fill="#1565C0"/>
+              <line x1="11" y1="88" x2="5"  y2="100" stroke="#FFCC80" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="25" y1="88" x2="31" y2="100" stroke="#FFCC80" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="14" y1="104" x2="12" y2="120" stroke="#1565C0" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="22" y1="104" x2="24" y2="120" stroke="#1565C0" strokeWidth="4" strokeLinecap="round"/>
+              {/* Mom */}
+              <circle cx="130" cy="75" r="9" fill="#FFCC80" stroke="#E8640A" strokeWidth="1.5"/>
+              <path d="M118,84 Q130,82 142,84 L140,104 Q130,107 120,104 Z" fill="#E91E8C"/>
+              <line x1="118" y1="90" x2="112" y2="102" stroke="#FFCC80" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="142" y1="90" x2="148" y2="102" stroke="#FFCC80" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="124" y1="104" x2="122" y2="120" stroke="#E91E8C" strokeWidth="4" strokeLinecap="round"/>
+              <line x1="136" y1="104" x2="138" y2="120" stroke="#E91E8C" strokeWidth="4" strokeLinecap="round"/>
+              {/* Cloud */}
+              <ellipse cx="50" cy="22" rx="18" ry="10" fill="white" opacity="0.9"/>
+              <ellipse cx="38" cy="26" rx="12" ry="8"  fill="white" opacity="0.9"/>
+              <ellipse cx="62" cy="26" rx="12" ry="8"  fill="white" opacity="0.9"/>
+              {/* Flowers */}
+              <circle cx="10"  cy="118" r="5" fill="#FFDA3D"/>
+              <circle cx="10"  cy="110" r="4" fill="#FF8EC4"/>
+              <circle cx="10"  cy="126" r="4" fill="#FF8EC4"/>
+              <circle cx="4"   cy="118" r="4" fill="#FF8EC4"/>
+              <circle cx="16"  cy="118" r="4" fill="#FF8EC4"/>
+              <circle cx="140" cy="118" r="5" fill="#FFDA3D"/>
+              <circle cx="140" cy="110" r="4" fill="#C8A0F5"/>
+              <circle cx="140" cy="126" r="4" fill="#C8A0F5"/>
+              <circle cx="134" cy="118" r="4" fill="#C8A0F5"/>
+              <circle cx="146" cy="118" r="4" fill="#C8A0F5"/>
+            </svg>
+            <div style={{ paddingTop:8 }}>
+              <div style={{ fontFamily:S.ffHand, fontSize:14, fontWeight:700, color:C.ink }}>My Family</div>
+              <div style={{ fontFamily:S.ff, fontSize:11, color:C.muted }}>Emma, 1st Grade</div>
+            </div>
+          </div>
+
+          {/* Card 3 — Space Rocket */}
+          <div style={{ position:"absolute", top:230, left:20, transform:"rotate(-2deg)", background:C.white, borderRadius:8, padding:10, boxShadow:"0 8px 32px rgba(45,27,0,0.14)", animation:"float2 4s ease-in-out infinite", animationDelay:"1.6s" }}>
+            <svg width="155" height="185" viewBox="0 0 155 185" style={{ display:"block", borderRadius:4, background:"#1A237E" }}>
+              <rect width="155" height="185" fill="#1A237E"/>
+              {/* Stars */}
+              {[[15,15],[45,8],[80,20],[120,12],[140,30],[10,50],[55,45],[100,38],[135,55],[25,75],[70,68],[115,72],[140,85],[8,100],[50,95],[90,105],[130,98],[20,130],[60,125],[100,118],[140,130],[30,155],[75,148],[115,155]].map(([x,y],i)=>(
+                <circle key={i} cx={x} cy={y} r={Math.random()>0.5?1.5:1} fill="white" opacity={0.6+Math.random()*0.4}/>
+              ))}
+              {/* Rocket body */}
+              <rect x="60" y="60" width="35" height="75" rx="5" fill="#EF5350" stroke="#B71C1C" strokeWidth="2"/>
+              {/* Rocket nose */}
+              <polygon points="60,60 95,60 77,25" fill="#FF8A65" stroke="#E64A19" strokeWidth="2"/>
+              {/* Window */}
+              <circle cx="77" cy="85" r="12" fill="#B3E5FC" stroke="white" strokeWidth="2.5"/>
+              <circle cx="77" cy="85" r="7"  fill="#0288D1"/>
+              <circle cx="73" cy="81" r="2.5" fill="white" opacity="0.8"/>
+              {/* Fins */}
+              <polygon points="60,110 45,145 60,135" fill="#FF8A65" stroke="#E64A19" strokeWidth="1.5"/>
+              <polygon points="95,110 110,145 95,135" fill="#FF8A65" stroke="#E64A19" strokeWidth="1.5"/>
+              {/* Flames */}
+              <ellipse cx="70" cy="142" rx="7"  ry="14" fill="#FFDA3D" opacity="0.9"/>
+              <ellipse cx="84" cy="142" rx="7"  ry="14" fill="#FFDA3D" opacity="0.9"/>
+              <ellipse cx="77" cy="145" rx="8"  ry="18" fill="#FF8A65" opacity="0.8"/>
+              <ellipse cx="77" cy="150" rx="5"  ry="12" fill="white"   opacity="0.6"/>
+              {/* Planet */}
+              <circle cx="25" cy="155" r="18" fill="#CE93D8" stroke="#9C27B0" strokeWidth="2"/>
+              <ellipse cx="25" cy="155" rx="26" ry="7" fill="none" stroke="#E1BEE7" strokeWidth="2.5"/>
+              {/* Small moon */}
+              <circle cx="130" cy="150" r="10" fill="#BDBDBD" stroke="#9E9E9E" strokeWidth="1.5"/>
+              <circle cx="126" cy="147" r="2.5" fill="#9E9E9E"/>
+              <circle cx="133" cy="153" r="2"   fill="#9E9E9E"/>
+            </svg>
+            <div style={{ paddingTop:8 }}>
+              <div style={{ fontFamily:S.ffHand, fontSize:14, fontWeight:700, color:C.ink }}>Space Rocket</div>
+              <div style={{ fontFamily:S.ff, fontSize:11, color:C.muted }}>Liam, K</div>
+            </div>
+          </div>
+
+          {/* Card 4 — Spring Flowers */}
+          <div style={{ position:"absolute", top:295, left:210, transform:"rotate(5deg)", background:C.white, borderRadius:8, padding:10, boxShadow:"0 8px 32px rgba(45,27,0,0.14)", animation:"float3 4s ease-in-out infinite", animationDelay:"2.4s" }}>
+            <svg width="145" height="170" viewBox="0 0 145 170" style={{ display:"block", borderRadius:4, background:"#F3E5F5" }}>
+              <rect width="145" height="170" fill="#F3E5F5"/>
+              {/* Sky */}
+              <rect width="145" height="100" fill="#E1F5FE"/>
+              {/* Sun */}
+              <circle cx="22" cy="22" r="14" fill="#FFDA3D"/>
+              {/* Clouds */}
+              <ellipse cx="85" cy="20" rx="20" ry="10" fill="white" opacity="0.9"/>
+              <ellipse cx="72" cy="24" rx="14" ry="8"  fill="white" opacity="0.9"/>
+              <ellipse cx="98" cy="24" rx="14" ry="8"  fill="white" opacity="0.9"/>
+              {/* Ground */}
+              <rect y="100" width="145" height="70" fill="#A5D6A7"/>
+              {/* Flower 1 - big pink */}
+              <line x1="40" y1="100" x2="40" y2="148" stroke="#4CAF50" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M33,120 Q28,112 35,108 Q40,106 40,112" fill="#8BC34A"/>
+              <circle cx="40" cy="78" r="10" fill="#FFDA3D" stroke="#F5A623" strokeWidth="2"/>
+              <ellipse cx="40" cy="63" rx="7"  ry="11" fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="40" cy="93" rx="7"  ry="11" fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="25" cy="78" rx="11" ry="7"  fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="55" cy="78" rx="11" ry="7"  fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="29" cy="67" rx="7"  ry="11" fill="#C8A0F5" stroke="#9C27B0" strokeWidth="1.5" transform="rotate(45 29 67)"/>
+              <ellipse cx="51" cy="67" rx="7"  ry="11" fill="#C8A0F5" stroke="#9C27B0" strokeWidth="1.5" transform="rotate(-45 51 67)"/>
+              <ellipse cx="29" cy="89" rx="7"  ry="11" fill="#C8A0F5" stroke="#9C27B0" strokeWidth="1.5" transform="rotate(-45 29 89)"/>
+              <ellipse cx="51" cy="89" rx="7"  ry="11" fill="#C8A0F5" stroke="#9C27B0" strokeWidth="1.5" transform="rotate(45 51 89)"/>
+              {/* Flower 2 - purple */}
+              <line x1="90" y1="100" x2="90" y2="140" stroke="#4CAF50" strokeWidth="3" strokeLinecap="round"/>
+              <circle cx="90" cy="72" r="8"   fill="#FFDA3D" stroke="#F5A623" strokeWidth="1.5"/>
+              <ellipse cx="90" cy="59" rx="6"  ry="9"  fill="#CE93D8" stroke="#9C27B0" strokeWidth="1.5"/>
+              <ellipse cx="90" cy="85" rx="6"  ry="9"  fill="#CE93D8" stroke="#9C27B0" strokeWidth="1.5"/>
+              <ellipse cx="77" cy="72" rx="9"  ry="6"  fill="#CE93D8" stroke="#9C27B0" strokeWidth="1.5"/>
+              <ellipse cx="103" cy="72" rx="9" ry="6"  fill="#CE93D8" stroke="#9C27B0" strokeWidth="1.5"/>
+              {/* Flower 3 - small yellow */}
+              <line x1="120" y1="100" x2="120" y2="130" stroke="#4CAF50" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle cx="120" cy="88" r="7"  fill="#FFDA3D" stroke="#F5A623" strokeWidth="1.5"/>
+              <ellipse cx="120" cy="77" rx="5" ry="8"  fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="120" cy="99" rx="5" ry="8"  fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="109" cy="88" rx="8" ry="5"  fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              <ellipse cx="131" cy="88" rx="8" ry="5"  fill="#FF8EC4" stroke="#E91E8C" strokeWidth="1.5"/>
+              {/* Butterfly */}
+              <ellipse cx="108" cy="55" rx="10" ry="14" fill="#FFB74D" stroke="#F57C00" strokeWidth="1.5" transform="rotate(-20 108 55)"/>
+              <ellipse cx="118" cy="55" rx="10" ry="14" fill="#FFB74D" stroke="#F57C00" strokeWidth="1.5" transform="rotate(20 118 55)"/>
+              <ellipse cx="108" cy="65" rx="7"  ry="10" fill="#FF8A65" stroke="#E64A19" strokeWidth="1.5" transform="rotate(20 108 65)"/>
+              <ellipse cx="118" cy="65" rx="7"  ry="10" fill="#FF8A65" stroke="#E64A19" strokeWidth="1.5" transform="rotate(-20 118 65)"/>
+              <ellipse cx="113" cy="60" rx="2"  ry="10" fill="#333"/>
+              {/* Grass blades */}
+              <path d="M5,100 Q8,88 11,100"   fill="none" stroke="#388E3C" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M15,100 Q18,85 21,100"  fill="none" stroke="#388E3C" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M130,100 Q133,90 136,100" fill="none" stroke="#388E3C" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+            <div style={{ paddingTop:8 }}>
+              <div style={{ fontFamily:S.ffHand, fontSize:14, fontWeight:700, color:C.ink }}>Spring Flowers</div>
+              <div style={{ fontFamily:S.ff, fontSize:11, color:C.muted }}>Sofia, Pre-K</div>
+            </div>
+          </div>
+
           <style>{`
             @keyframes float0 { 0%,100%{transform:rotate(-4deg) translateY(0)} 50%{transform:rotate(-4deg) translateY(-8px)} }
             @keyframes float1 { 0%,100%{transform:rotate(3deg) translateY(0)} 50%{transform:rotate(3deg) translateY(-6px)} }
