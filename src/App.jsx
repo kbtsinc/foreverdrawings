@@ -48,6 +48,7 @@ function FadeIn({ children, delay = 0, style = {} }) {
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function Nav({ onLogin }) {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", h);
@@ -55,51 +56,73 @@ function Nav({ onLogin }) {
   }, []);
 
   return (
-    <nav style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-      background: scrolled ? "rgba(254,252,247,0.95)" : "transparent",
-      borderBottom: scrolled ? `1px solid ${C.border}` : "none",
-      backdropFilter: scrolled ? "blur(12px)" : "none",
-      transition: "all 0.3s", padding: "0 24px",
-    }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", height: 68, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="36" height="36" viewBox="0 0 72 72">
-            <circle cx="36" cy="36" r="36" fill={C.orange}/>
-            <rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/>
-            <polygon points="41,14 54,14 54,27" fill="#E8D5B0" opacity="0.9"/>
-            <line x1="23" y1="32" x2="49" y2="32" stroke="#C8C0B8" strokeWidth="1"/>
-            <line x1="23" y1="39" x2="49" y2="39" stroke="#C8C0B8" strokeWidth="1"/>
-            <line x1="23" y1="46" x2="49" y2="46" stroke="#C8C0B8" strokeWidth="1"/>
-            <g transform="translate(20,15) rotate(18)">
-              <rect x="0" y="0" width="8" height="36" rx="2" fill="#2D1B00"/>
-              <rect x="0" y="8" width="8" height="10" fill="#1A0F00"/>
-              <polygon points="0,36 8,36 4,46" fill="#F4C88C"/>
-            </g>
-          </svg>
-          <span style={{ fontFamily: S.ffHand, fontSize: 22, fontWeight: 700, color: C.ink }}>Forever Drawings</span>
+    <>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: scrolled || menuOpen ? "rgba(254,252,247,0.97)" : "transparent",
+        borderBottom: scrolled || menuOpen ? `1px solid ${C.border}` : "none",
+        backdropFilter: "blur(12px)", transition: "all 0.3s", padding: "0 20px",
+      }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <svg width="32" height="32" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="36" fill={C.orange}/>
+              <rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/>
+              <polygon points="41,14 54,14 54,27" fill="#E8D5B0" opacity="0.9"/>
+              <line x1="23" y1="32" x2="49" y2="32" stroke="#C8C0B8" strokeWidth="1"/>
+              <line x1="23" y1="39" x2="49" y2="39" stroke="#C8C0B8" strokeWidth="1"/>
+              <line x1="23" y1="46" x2="49" y2="46" stroke="#C8C0B8" strokeWidth="1"/>
+              <g transform="translate(20,15) rotate(18)">
+                <rect x="0" y="0" width="8" height="36" rx="2" fill="#2D1B00"/>
+                <rect x="0" y="8" width="8" height="10" fill="#1A0F00"/>
+                <polygon points="0,36 8,36 4,46" fill="#F4C88C"/>
+              </g>
+            </svg>
+            <span style={{ fontFamily: S.ffHand, fontSize: 20, fontWeight: 700, color: C.ink }}>Forever Drawings</span>
+          </div>
+
+          {/* Desktop nav links */}
+          <div style={{ display: "flex", alignItems: "center", gap: 28, "@media(max-width:768px)": {display:"none"} }}>
+            <style>{`@media(max-width:768px){.nav-links{display:none!important}}`}</style>
+            <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: 28 }}>
+              {["Features", "How it works", "Pricing"].map(l => (
+                <a key={l} href={"#" + l.toLowerCase().replace(/ /g,"-")} style={{ fontFamily: S.ff, fontSize: 15, color: C.muted, textDecoration: "none" }}>{l}</a>
+              ))}
+              <button onClick={onLogin} style={{ background: "none", border: `1.5px solid ${C.border}`, borderRadius: 30, padding: "8px 18px", fontFamily: S.ff, fontSize: 14, color: C.ink, cursor: "pointer" }}>Sign in</button>
+              <button onClick={onLogin} style={{ background: C.orange, border: "none", borderRadius: 30, padding: "9px 20px", fontFamily: S.ff, fontSize: 14, fontWeight: 600, color: "white", cursor: "pointer", boxShadow: "0 4px 14px rgba(232,100,10,0.3)" }}>Start free →</button>
+            </div>
+
+            {/* Mobile: just CTA + hamburger */}
+            <div className="nav-mobile" style={{ display: "none", alignItems: "center", gap: 10 }}>
+              <style>{`.nav-mobile{display:none!important} @media(max-width:768px){.nav-mobile{display:flex!important}}`}</style>
+              <button onClick={onLogin} style={{ background: C.orange, border: "none", borderRadius: 30, padding: "9px 18px", fontFamily: S.ff, fontSize: 14, fontWeight: 600, color: "white", cursor: "pointer" }}>Start free</button>
+              <button onClick={() => setMenuOpen(m => !m)} style={{ background: "none", border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 4 }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 20, height: 2, background: C.ink, borderRadius: 2 }}/>)}
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          {["Features", "How it works", "Pricing"].map(l => (
-            <a key={l} href={`#${l.toLowerCase().replace(/ /g,"-")}`} style={{ fontFamily: S.ff, fontSize: 15, color: C.muted, textDecoration: "none" }}>{l}</a>
-          ))}
-          <button onClick={onLogin} style={{ background: "none", border: `1.5px solid ${C.border}`, borderRadius: 30, padding: "8px 20px", fontFamily: S.ff, fontSize: 14, color: C.ink, cursor: "pointer" }}>Sign in</button>
-          <button onClick={onLogin} style={{ background: C.orange, border: "none", borderRadius: 30, padding: "9px 22px", fontFamily: S.ff, fontSize: 14, fontWeight: 600, color: "white", cursor: "pointer", boxShadow: "0 4px 14px rgba(232,100,10,0.3)" }}>
-            Start free →
-          </button>
-        </div>
-      </div>
-    </nav>
+        {/* Mobile menu dropdown */}
+        {menuOpen && (
+          <div style={{ borderTop: `1px solid ${C.border}`, padding: "16px 20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+            {["Features", "How it works", "Pricing"].map(l => (
+              <a key={l} href={"#" + l.toLowerCase().replace(/ /g,"-")} onClick={() => setMenuOpen(false)} style={{ fontFamily: S.ff, fontSize: 16, color: C.ink, textDecoration: "none", padding: "4px 0" }}>{l}</a>
+            ))}
+            <button onClick={() => { setMenuOpen(false); onLogin(); }} style={{ background: "none", border: `1.5px solid ${C.border}`, borderRadius: 30, padding: "12px", fontFamily: S.ff, fontSize: 15, color: C.ink, cursor: "pointer" }}>Sign in</button>
+            <button onClick={() => { setMenuOpen(false); onLogin(); }} style={{ background: C.orange, border: "none", borderRadius: 30, padding: "14px", fontFamily: S.ff, fontSize: 15, fontWeight: 600, color: "white", cursor: "pointer" }}>Start free →</button>
+          </div>
+        )}
+      </nav>
+    </>
   );
 }
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 function Hero({ onLogin }) {
   return (
-    <section style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", paddingTop: 68, overflow: "hidden", position: "relative" }}>
+    <section style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", paddingTop: 64, overflow: "hidden", position: "relative" }}>
       {/* Ruled lines background */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
         {Array.from({ length: 20 }).map((_, i) => (
@@ -108,14 +131,33 @@ function Hero({ onLogin }) {
         <div style={{ position: "absolute", left: 120, top: 0, bottom: 0, width: 1.5, background: "#F4AAAA", opacity: 0.5 }} />
       </div>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center", position: "relative", zIndex: 1 }}>
+      <style>{`
+  @media(max-width:768px){
+    .hero-grid{grid-template-columns:1fr!important;gap:40px!important;padding:40px 20px 60px!important;}
+    .hero-art{display:none!important;}
+    .hero-h1{font-size:48px!important;}
+    .hero-p{font-size:16px!important;}
+    .hero-btns{flex-direction:column!important;}
+    .hero-btns button{width:100%!important;text-align:center!important;}
+    .features-grid{grid-template-columns:1fr!important;}
+    .how-grid{grid-template-columns:1fr 1fr!important;}
+    .email-grid{grid-template-columns:1fr!important;}
+    .pricing-grid{grid-template-columns:1fr!important;}
+    .testimonials-grid{grid-template-columns:1fr!important;}
+    .stats-grid{grid-template-columns:repeat(2,1fr)!important;}
+  }
+  @media(max-width:480px){
+    .how-grid{grid-template-columns:1fr!important;}
+  }
+`}</style>
+<div className="hero-grid" style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center", position: "relative", zIndex: 1 }}>
         {/* Left — copy */}
         <div>
           <div style={{ display: "inline-block", background: C.orangeL, border: `1px solid ${C.border}`, borderRadius: 30, padding: "6px 16px", marginBottom: 28 }}>
             <span style={{ fontFamily: S.ffHand, fontSize: 15, color: C.orange }}>✏️ For parents who can't throw away a single drawing</span>
           </div>
 
-          <h1 style={{ fontFamily: S.ffHand, fontSize: 68, fontWeight: 700, color: C.ink, lineHeight: 1.05, margin: "0 0 12px", letterSpacing: "-1px" }}>
+          <h1 className="hero-h1" style={{ fontFamily: S.ffHand, fontSize: 68, fontWeight: 700, color: C.ink, lineHeight: 1.05, margin: "0 0 12px", letterSpacing: "-1px" }}>
             Preserve every<br/>
             <span style={{ color: C.orange }}>drawing,</span><br/>
             forever.
@@ -126,11 +168,11 @@ function Hero({ onLogin }) {
             <path d="M0,10 Q60,4 120,10 Q180,16 240,8 Q280,4 320,10" fill="none" stroke={C.orange} strokeWidth="4" strokeLinecap="round"/>
           </svg>
 
-          <p style={{ fontFamily: S.ff, fontSize: 18, color: C.muted, lineHeight: 1.8, margin: "0 0 40px", maxWidth: 440 }}>
+          <p className="hero-p" style={{ fontFamily: S.ff, fontSize: 18, color: C.muted, lineHeight: 1.8, margin: "0 0 40px", maxWidth: 440 }}>
             Your child brings home a drawing every week. You love it, you can't throw it away, but you can't keep all of them either. Forever Drawings is your family's art vault — organized, beautiful, and backed up forever.
           </p>
 
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          <div className="hero-btns" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
             <button onClick={onLogin} style={{ background: C.orange, border: "none", borderRadius: 30, padding: "16px 36px", fontFamily: S.ff, fontSize: 17, fontWeight: 600, color: "white", cursor: "pointer", boxShadow: "0 6px 20px rgba(232,100,10,0.35)" }}>
               Start your vault — it's free →
             </button>
@@ -139,11 +181,11 @@ function Hero({ onLogin }) {
             </button>
           </div>
 
-          <p style={{ fontFamily: S.ff, fontSize: 13, color: C.muted, marginTop: 16, fontStyle: "italic" }}>No credit card required · Free forever for families</p>
+          <p style={{ fontFamily: S.ff, fontSize: 13, color: C.muted, marginTop: 16, fontStyle: "italic" }}>Free plan: 1 child · 5 drawings/month · No credit card</p>
         </div>
 
         {/* Right — kid drawing cards */}
-        <div style={{ position: "relative", height: 580 }}>
+        <div className="hero-art" style={{ position: "relative", height: 580 }}>
 
           {/* Card 1 — Sunshine Dragon */}
           <div style={{ position:"absolute", top:0, left:60, transform:"rotate(-4deg)", background:C.white, borderRadius:8, padding:10, boxShadow:"0 8px 32px rgba(45,27,0,0.14)", animation:"float0 4s ease-in-out infinite" }}>
@@ -361,7 +403,7 @@ function SocialProof() {
   ];
   return (
     <section style={{ background: C.ink, padding: "48px 24px" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
+      <div className="stats-grid" style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
         {stats.map(s => (
           <div key={s.label} style={{ textAlign: "center" }}>
             <div style={{ fontFamily: S.ffHand, fontSize: 48, fontWeight: 700, color: C.orange }}>{s.val}</div>
@@ -431,7 +473,7 @@ function HowItWorks() {
           </div>
         </FadeIn>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 32, position: "relative" }}>
+        <div className="how-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 32, position: "relative" }}>
           {/* Connecting line */}
           <div style={{ position: "absolute", top: 40, left: "12.5%", right: "12.5%", height: 2, background: `linear-gradient(to right, ${C.orange}, ${C.orange})`, opacity: 0.2, zIndex: 0 }} />
 
@@ -457,7 +499,7 @@ function HowItWorks() {
 function EmailFeature() {
   return (
     <section style={{ background: C.ink, padding: "100px 24px", overflow: "hidden" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
+      <div className="email-grid" style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
         <FadeIn>
           <div>
             <div style={{ fontFamily: S.ffHand, fontSize: 16, color: C.orange, marginBottom: 16, letterSpacing: 1 }}>✉️ YOUR VAULT EMAIL</div>
@@ -521,11 +563,11 @@ function EmailFeature() {
 function Pricing({ onLogin }) {
   const plans = [
     {
-      name: "Family",
+      name: "Family Free",
       price: "Free",
       sub: "Forever, no credit card",
-      color: C.orange,
-      features: ["Unlimited children", "Unlimited drawings", "Albums & smart albums", "Tags & filtering", "Share links", "Email-to-vault", "PWA — install on phone", "1 cloud storage connection"],
+      included: ["1 child", "5 drawings per month", "Albums & smart albums", "Tags & filtering", "Install on phone (PWA)"],
+      excluded: ["Share links", "Email-to-vault", "Cloud storage sync", "Nightly backups"],
       cta: "Start free →",
       featured: false,
     },
@@ -533,8 +575,8 @@ function Pricing({ onLogin }) {
       name: "Family Pro",
       price: "$4.99",
       sub: "per month",
-      color: C.ink,
-      features: ["Everything in Free", "All 3 cloud connections", "Google Drive + OneDrive + Dropbox", "Nightly automatic backups", "30-day backup retention", "Priority support", "Early access to new features"],
+      included: ["Unlimited children", "Unlimited drawings", "Albums & smart albums", "Tags & filtering", "Install on phone (PWA)", "Share links (up to 5 drawings)", "Email-to-vault", "Google Drive, OneDrive & Dropbox sync", "Nightly automatic backups", "30-day backup retention"],
+      excluded: [],
       cta: "Start free trial →",
       featured: true,
     },
@@ -546,11 +588,11 @@ function Pricing({ onLogin }) {
         <FadeIn>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <h2 style={{ fontFamily: S.ffHand, fontSize: 52, fontWeight: 700, color: C.ink, margin: "0 0 16px" }}>Simple, honest pricing</h2>
-            <p style={{ fontFamily: S.ff, fontSize: 18, color: C.muted }}>Start free. Upgrade when you want more cloud connections and backups.</p>
+            <p style={{ fontFamily: S.ff, fontSize: 18, color: C.muted }}>Start free with 1 child and 5 drawings a month. Upgrade for unlimited everything.</p>
           </div>
         </FadeIn>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           {plans.map((plan, i) => (
             <FadeIn key={plan.name} delay={i * 0.1}>
               <div style={{
@@ -570,11 +612,17 @@ function Pricing({ onLogin }) {
                 <div style={{ fontFamily: S.ffHand, fontSize: 48, fontWeight: 700, color: plan.featured ? "white" : C.ink, lineHeight: 1 }}>{plan.price}</div>
                 <div style={{ fontFamily: S.ff, fontSize: 13, color: plan.featured ? "rgba(255,255,255,0.4)" : C.muted, marginBottom: 28 }}>{plan.sub}</div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
-                  {plan.features.map(f => (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 32 }}>
+                  {plan.included.map(f => (
                     <div key={f} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                       <span style={{ color: C.orange, flexShrink: 0, fontSize: 14 }}>✓</span>
                       <span style={{ fontFamily: S.ff, fontSize: 14, color: plan.featured ? "rgba(255,255,255,0.75)" : C.muted, lineHeight: 1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                  {plan.excluded.map(f => (
+                    <div key={f} style={{ display: "flex", gap: 10, alignItems: "flex-start", opacity: 0.4 }}>
+                      <span style={{ color: plan.featured ? "rgba(255,255,255,0.4)" : C.muted, flexShrink: 0, fontSize: 14 }}>✗</span>
+                      <span style={{ fontFamily: S.ff, fontSize: 14, color: plan.featured ? "rgba(255,255,255,0.5)" : C.muted, lineHeight: 1.5, textDecoration: "line-through" }}>{f}</span>
                     </div>
                   ))}
                 </div>
@@ -612,7 +660,7 @@ function Testimonials() {
             Parents love it
           </h2>
         </FadeIn>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
+        <div className="testimonials-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
           {quotes.map((q, i) => (
             <FadeIn key={q.name} delay={i * 0.1}>
               <div style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.border}` }}>
@@ -1151,7 +1199,7 @@ function ShareModal({selectedIds,artworks,onClose}) {
 }
 
 // ─── ArtworkGrid with carousel + select + share ───────────────────────────────
-function ArtworkGrid({artworks,tags,onTagEdit}) {
+function ArtworkGrid({artworks,tags,onTagEdit,isFree,onUpgrade}) {
   const [active,setActive]=useState([]);
   const [selected,setSelected]=useState(new Set());
   const [carousel,setCarousel]=useState(null);
@@ -1182,7 +1230,7 @@ function ArtworkGrid({artworks,tags,onTagEdit}) {
       {selected.size>0&&(
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16,padding:"12px 16px",background:"#FFF5EE",borderRadius:12,border:`1.5px solid ${T.border}`}}>
           <span style={{fontFamily:T.ff,fontSize:13,color:T.muted,flex:1}}>{selected.size} of 5 selected</span>
-          <button onClick={()=>setShowShare(true)} style={{background:T.orange,color:"white",border:"none",borderRadius:20,padding:"8px 18px",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:T.ff}}>Share Selected</button>
+          <button onClick={()=>{ if(isFree){onUpgrade("share");return;} setShowShare(true); }} style={{background:T.orange,color:"white",border:"none",borderRadius:20,padding:"8px 18px",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:T.ff}}>Share Selected</button>
           <button onClick={()=>setSelected(new Set())} style={{background:"none",border:`1.5px solid ${T.border}`,borderRadius:20,padding:"7px 14px",color:T.muted,fontSize:12,cursor:"pointer",fontFamily:T.ff}}>Clear</button>
         </div>
       )}
@@ -1205,8 +1253,10 @@ function ArtworkGrid({artworks,tags,onTagEdit}) {
               <button onClick={e=>{e.stopPropagation();toggleSelect(art.id);}} style={{position:"absolute",top:8,right:8,width:26,height:26,borderRadius:"50%",background:selected.has(art.id)?T.orange:"rgba(255,255,255,0.88)",border:selected.has(art.id)?"none":"1.5px solid rgba(255,255,255,0.5)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"white",fontWeight:700,boxShadow:"0 2px 6px rgba(0,0,0,0.2)"}}>
                 {selected.has(art.id)?"✓":""}
               </button>
-              {/* Tag button */}
-              <button onClick={e=>{e.stopPropagation();onTagEdit(art);}} style={{position:"absolute",bottom:8,right:8,background:"rgba(255,255,255,0.88)",border:"none",borderRadius:20,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:T.ff,fontWeight:700}}>🏷</button>
+              {/* Tag button — more tap-friendly */}
+              <button onClick={e=>{e.stopPropagation();onTagEdit(art);}} style={{position:"absolute",bottom:8,right:8,background:"rgba(255,255,255,0.92)",border:"none",borderRadius:20,padding:"5px 10px",fontSize:12,cursor:"pointer",fontFamily:T.ff,fontWeight:700,display:"flex",alignItems:"center",gap:4,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
+                <span>🏷</span><span style={{fontSize:10}}>Tag</span>
+              </button>
             </div>
           </div>
         ))}
@@ -1227,6 +1277,66 @@ function ArtworkGrid({artworks,tags,onTagEdit}) {
 }
 
 
+// ─── Plan limits ─────────────────────────────────────────────────────────────
+const FREE_LIMITS = {
+  maxChildren:        1,
+  maxDrawingsPerMonth: 5,
+  canShare:           false,
+  canEmailVault:      false,
+  canCloudSync:       false,
+};
+
+function getPlanInfo(user) {
+  // In production: check user.app_metadata.plan or a profiles table field
+  // For now everyone starts on free — set user.plan = "pro" to unlock
+  return user?.plan === "pro" ? "pro" : "free";
+}
+
+function getDrawingsThisMonth(artworks) {
+  const now = new Date();
+  return artworks.filter(a => {
+    const d = new Date(a.artwork_date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+}
+
+// ─── Upgrade Modal ────────────────────────────────────────────────────────────
+function UpgradeModal({ reason, onClose, onUpgrade }) {
+  const reasons = {
+    children:  { icon: "👨‍👩‍👧‍👦", title: "Add more children",    body: "The free plan supports 1 child. Upgrade to Family Pro for unlimited children." },
+    drawings:  { icon: "🖼️",        title: "Drawing limit reached", body: "You've used your 5 free drawings this month. Upgrade to Family Pro for unlimited drawings." },
+    share:     { icon: "🔗",        title: "Share links",           body: "Sharing drawings is a Family Pro feature. Upgrade to send links to grandparents and family." },
+    email:     { icon: "📧",        title: "Email-to-vault",        body: "Forwarding school emails to your vault is a Family Pro feature." },
+    cloud:     { icon: "☁️",        title: "Cloud storage sync",    body: "Syncing to Google Drive, OneDrive, and Dropbox is a Family Pro feature." },
+  };
+  const r = reasons[reason] || reasons.drawings;
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:2000,padding:20}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#2D1B00",borderRadius:24,padding:40,width:"100%",maxWidth:420,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.4)"}}>
+        <div style={{fontSize:52,marginBottom:16}}>{r.icon}</div>
+        <h2 style={{fontFamily:T.ff,fontSize:24,fontWeight:900,color:"white",margin:"0 0 12px"}}>{r.title}</h2>
+        <p style={{fontFamily:T.ff,fontSize:15,color:"rgba(255,255,255,0.7)",lineHeight:1.7,margin:"0 0 28px"}}>{r.body}</p>
+        <div style={{background:"rgba(255,255,255,0.06)",borderRadius:14,padding:"16px 20px",marginBottom:28}}>
+          <div style={{fontFamily:T.ff,fontSize:13,color:"rgba(255,255,255,0.5)",marginBottom:8}}>Family Pro includes:</div>
+          {["Unlimited children & drawings","Share links with family","Email-to-vault","Google Drive, OneDrive & Dropbox","Nightly backups"].map(f=>(
+            <div key={f} style={{display:"flex",gap:10,alignItems:"center",marginBottom:6}}>
+              <span style={{color:T.orange,fontSize:13}}>✓</span>
+              <span style={{fontFamily:T.ff,fontSize:13,color:"rgba(255,255,255,0.75)"}}>{f}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={onUpgrade} style={{width:"100%",padding:"15px",background:T.orange,color:"white",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:T.ff,boxShadow:"0 4px 16px rgba(232,100,10,0.4)",marginBottom:12}}>
+          Upgrade to Pro — $4.99/mo
+        </button>
+        <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:13,cursor:"pointer",fontFamily:T.ff}}>
+          Maybe later
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Gallery (main app screen) ────────────────────────────────────────────────
 function Gallery({user, onLogout}) {
   const [children,setChildren]=useState(CHILDREN);
@@ -1240,12 +1350,29 @@ function Gallery({user, onLogout}) {
   const [showNewAlbum,setShowNewAlbum]=useState(false);
   const [tagEditArt,setTagEditArt]=useState(null);
   const [openAlbum,setOpenAlbum]=useState(null);
+  const [upgradeReason,setUpgradeReason]=useState(null);
+
+  const plan = getPlanInfo(user);
+  const isFree = plan === "free";
+  const drawingsThisMonth = getDrawingsThisMonth(artworks);
 
   const visibleArtworks=activeChild==="all"?artworks:artworks.filter(a=>a.child_id===activeChild);
   const visibleAlbums=activeChild==="all"?albums:albums.filter(a=>a.child_id===activeChild||!a.child_id);
   const activeChildObj=children.find(c=>c.id===activeChild);
 
   function handleTagSave(artworkId,tagIds){setArtworks(p=>p.map(a=>a.id===artworkId?{...a,tags:tags.filter(t=>tagIds.includes(t.id))}:a));}
+
+  function tryAddChild() {
+    if (isFree && children.length >= FREE_LIMITS.maxChildren) {
+      setUpgradeReason("children"); return;
+    }
+    setShowAddChild(true);
+  }
+
+  function tryShare() {
+    if (isFree) { setUpgradeReason("share"); return; }
+    // share logic handled inside ArtworkGrid
+  }
 
   function handleAlbumOpen(album){
     let arts=[];
@@ -1258,6 +1385,38 @@ function Gallery({user, onLogout}) {
     setOpenAlbum({...album,artworks:arts});
   }
 
+  // PWA install prompt
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showIOSBanner, setShowIOSBanner] = useState(false);
+  const [installDismissed, setInstallDismissed] = useState(
+    () => localStorage.getItem("pwa-install-dismissed") === "true"
+  );
+
+  useEffect(() => {
+    const handler = e => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    // iOS detection
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone;
+    if (isIOS && !isStandalone && !installDismissed) setShowIOSBanner(true);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  function dismissInstall() {
+    localStorage.setItem("pwa-install-dismissed", "true");
+    setInstallDismissed(true);
+    setInstallPrompt(null);
+    setShowIOSBanner(false);
+  }
+
+  async function doInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+    dismissInstall();
+  }
+
   return (
     <div style={{background:T.bg,minHeight:"100vh",fontFamily:T.ff}}>
       {/* Header */}
@@ -1266,6 +1425,12 @@ function Gallery({user, onLogout}) {
           <svg width="28" height="28" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill={T.orange}/><rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/><g transform="translate(20,15) rotate(18)"><rect x="0" y="0" width="8" height="36" rx="2" fill="#2D1B00"/><polygon points="0,36 8,36 4,46" fill="#F4C88C"/></g></svg>
           <span style={{fontSize:17,fontWeight:900,color:T.ink,letterSpacing:"-0.5px"}}>Forever Drawings</span>
           <div style={{flex:1}}/>
+          {isFree&&(
+            <div style={{display:"flex",alignItems:"center",gap:6,background:"#FFF0E5",borderRadius:20,padding:"6px 14px",border:`1px solid ${T.border}`}}>
+              <span style={{fontFamily:T.ff,fontSize:11,color:T.orange,fontWeight:700}}>{drawingsThisMonth}/5 drawings this month</span>
+              <button onClick={()=>setUpgradeReason("drawings")} style={{background:T.orange,color:"white",border:"none",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:T.ff}}>Upgrade</button>
+            </div>
+          )}
           <button onClick={()=>setShowTagMgr(true)} style={{background:"none",border:`1.5px solid ${T.border}`,borderRadius:20,padding:"7px 14px",color:T.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:T.ff}}>🏷 Tags</button>
           <button onClick={onLogout} style={{background:"none",border:`1.5px solid ${T.border}`,borderRadius:20,padding:"7px 14px",color:T.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:T.ff}}>Sign Out</button>
         </div>
@@ -1286,7 +1451,7 @@ function Gallery({user, onLogout}) {
               </button>
             );
           })}
-          <button onClick={()=>setShowAddChild(true)} style={{width:36,height:36,borderRadius:"50%",border:`2px dashed ${T.border}`,background:"none",cursor:"pointer",fontSize:18,color:T.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+          <button onClick={tryAddChild} style={{width:36,height:36,borderRadius:"50%",border:`2px dashed ${T.border}`,background:"none",cursor:"pointer",fontSize:18,color:T.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}} title={isFree?"Free plan: 1 child only":"Add child"}>+</button>
         </div>
         {/* Tabs */}
         <div style={{maxWidth:960,margin:"0 auto",padding:"0 20px",display:"flex",borderTop:`1px solid ${T.border}`}}>
@@ -1311,11 +1476,84 @@ function Gallery({user, onLogout}) {
             </div>
           </div>
         )}
-        {activeTab==="gallery"&&<ArtworkGrid artworks={visibleArtworks} tags={tags} onTagEdit={setTagEditArt}/>}
+        {/* Upload button + limit notice */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+          <button
+            onClick={()=>{ if(isFree && drawingsThisMonth >= FREE_LIMITS.maxDrawingsPerMonth){ setUpgradeReason("drawings"); return; } alert("Upload feature: connect to Supabase to enable real uploads"); }}
+            style={{background:T.orange,color:"white",border:"none",borderRadius:30,padding:"11px 22px",fontFamily:T.ff,fontSize:14,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 14px rgba(232,100,10,0.28)"}}>
+            + Add Drawing
+          </button>
+          {isFree&&drawingsThisMonth>=FREE_LIMITS.maxDrawingsPerMonth&&(
+            <span style={{fontFamily:T.ff,fontSize:12,color:T.orange}}>Monthly limit reached · <button onClick={()=>setUpgradeReason("drawings")} style={{background:"none",border:"none",color:T.orange,cursor:"pointer",fontWeight:700,fontFamily:T.ff,fontSize:12,textDecoration:"underline"}}>Upgrade to Pro</button></span>
+          )}
+          {isFree&&drawingsThisMonth<FREE_LIMITS.maxDrawingsPerMonth&&(
+            <span style={{fontFamily:T.ff,fontSize:12,color:T.muted}}>{FREE_LIMITS.maxDrawingsPerMonth - drawingsThisMonth} drawing{FREE_LIMITS.maxDrawingsPerMonth - drawingsThisMonth!==1?"s":""} left this month · <button onClick={()=>setUpgradeReason("drawings")} style={{background:"none",border:"none",color:T.orange,cursor:"pointer",fontFamily:T.ff,fontSize:12,textDecoration:"underline"}}>Upgrade for unlimited</button></span>
+          )}
+        </div>
+
+        {activeTab==="gallery"&&<ArtworkGrid artworks={visibleArtworks} tags={tags} onTagEdit={setTagEditArt} isFree={isFree} onUpgrade={setUpgradeReason}/>}
         {activeTab==="albums"&&<AlbumsGrid albums={visibleAlbums} children={children} onOpen={handleAlbumOpen} onCreate={()=>setShowNewAlbum(true)} onDelete={id=>setAlbums(p=>p.filter(a=>a.id!==id))}/>}
       </div>
 
       {showAddChild&&<AddChildModal onClose={()=>setShowAddChild(false)} onAdd={c=>{setChildren(p=>[...p,c]);setShowAddChild(false);}}/>}
+      {upgradeReason&&<UpgradeModal reason={upgradeReason} onClose={()=>setUpgradeReason(null)} onUpgrade={()=>setUpgradeReason(null)}/>}
+
+      {/* Android/Desktop install prompt */}
+      {installPrompt && !installDismissed && (
+        <div style={{position:"fixed",bottom:80,left:16,right:16,background:T.white,borderRadius:16,padding:16,boxShadow:"0 8px 32px rgba(45,27,0,0.18)",display:"flex",gap:14,alignItems:"center",zIndex:900,border:`1.5px solid ${T.border}`}}>
+          <svg width="40" height="40" viewBox="0 0 72 72" style={{flexShrink:0}}>
+            <circle cx="36" cy="36" r="36" fill={T.orange}/>
+            <rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/>
+            <g transform="translate(20,15) rotate(18)">
+              <rect x="0" y="0" width="8" height="36" rx="2" fill="#2D1B00"/>
+              <polygon points="0,36 8,36 4,46" fill="#F4C88C"/>
+            </g>
+          </svg>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:700,color:T.ink,fontSize:14,fontFamily:T.ff}}>Add to Home Screen</div>
+            <div style={{color:T.muted,fontSize:12,marginTop:2,fontFamily:T.ff}}>Upload drawings straight from your camera roll</div>
+          </div>
+          <button onClick={dismissInstall} style={{background:"none",border:"none",color:T.muted,cursor:"pointer",fontSize:20,padding:4,flexShrink:0}}>✕</button>
+          <button onClick={doInstall} style={{background:T.orange,color:"white",border:"none",borderRadius:20,padding:"9px 16px",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:T.ff,whiteSpace:"nowrap",flexShrink:0}}>Install</button>
+        </div>
+      )}
+
+      {/* Mobile floating upload button */}
+      <style>{`@media(min-width:769px){.mobile-fab{display:none!important}}`}</style>
+      <button
+        className="mobile-fab"
+        onClick={()=>{ if(isFree && drawingsThisMonth >= FREE_LIMITS.maxDrawingsPerMonth){ setUpgradeReason("drawings"); return; } alert("Upload: connect to Supabase to enable real uploads"); }}
+        style={{position:"fixed",bottom:24,right:24,width:64,height:64,borderRadius:"50%",background:T.orange,color:"white",border:"none",fontSize:28,cursor:"pointer",boxShadow:"0 6px 20px rgba(232,100,10,0.45)",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        +
+      </button>
+
+      {/* iOS install instructions */}
+      {showIOSBanner && !installDismissed && (
+        <div style={{position:"fixed",bottom:80,left:16,right:16,background:T.white,borderRadius:16,padding:18,boxShadow:"0 8px 32px rgba(45,27,0,0.18)",zIndex:900,border:`1.5px solid ${T.border}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{display:"flex",gap:10,alignItems:"center"}}>
+              <svg width="32" height="32" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="36" fill={T.orange}/>
+                <rect x="18" y="14" width="36" height="44" rx="3" fill="white" opacity="0.92"/>
+                <g transform="translate(20,15) rotate(18)"><rect x="0" y="0" width="8" height="36" rx="2" fill="#2D1B00"/><polygon points="0,36 8,36 4,46" fill="#F4C88C"/></g>
+              </svg>
+              <div>
+                <div style={{fontWeight:700,color:T.ink,fontSize:14,fontFamily:T.ff}}>Install Forever Drawings</div>
+                <div style={{color:T.muted,fontSize:12,fontFamily:T.ff}}>Add to your iPhone home screen</div>
+              </div>
+            </div>
+            <button onClick={dismissInstall} style={{background:"none",border:"none",color:T.muted,cursor:"pointer",fontSize:20}}>✕</button>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {[{icon:"⬆️",text:'Tap the Share button at the bottom of Safari'},{icon:"➕",text:'Tap "Add to Home Screen"'},{icon:"✓",text:'Tap "Add" — the app appears on your home screen'}].map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:12,alignItems:"center"}}>
+                <div style={{width:28,height:28,borderRadius:"50%",background:"#FFF5EE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{s.icon}</div>
+                <span style={{fontSize:13,color:T.ink,fontFamily:T.ff}}>{s.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {showTagMgr&&<TagManagerModal tags={tags} onClose={()=>setShowTagMgr(false)} onChange={setTags}/>}
       {showNewAlbum&&<CreateAlbumModal children={children} tags={tags} childId={activeChild!=="all"?activeChild:""} onClose={()=>setShowNewAlbum(false)} onCreate={a=>{setAlbums(p=>[...p,a]);setShowNewAlbum(false);}}/>}
       {tagEditArt&&<ArtworkTagEditor artwork={tagEditArt} tags={tags} onSave={handleTagSave} onClose={()=>setTagEditArt(null)}/>}
