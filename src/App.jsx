@@ -1113,6 +1113,11 @@ function CarouselModal({artworks, startIndex, onClose, onToggleFavorite}) {
         <button onClick={()=>onToggleFavorite(art.id)} style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",border:"none",cursor:"pointer",fontSize:20}}>
           {art.is_favorite?"❤️":"🤍"}
         </button>
+        <button onClick={()=>{
+          const win=window.open("","_blank");
+          win.document.write(`<html><head><title>${art.title}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:white;font-family:Georgia,serif;padding:20px;box-sizing:border-box;}img{max-width:100%;max-height:80vh;object-fit:contain;}h2{color:#2D1B00;margin:16px 0 4px;}p{color:#8B6040;margin:0;font-size:13px;}</style></head><body><img src="${art.url}" alt="${art.title}"/><h2>${art.title}</h2><p>${art.tags?.map(t=>t.name).join(" · ")||""}</p><script>window.onload=()=>window.print();</script></body></html>`);
+          win.document.close();
+        }} style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",border:"none",color:"white",fontSize:18,cursor:"pointer"}} title="Print">🖨️</button>
         <button onClick={onClose} style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",border:"none",color:"white",fontSize:20,cursor:"pointer"}}>✕</button>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:16,padding:"0 20px",width:"100%",maxWidth:820}}>
@@ -1143,6 +1148,7 @@ function ShareModal({selectedIds,artworks,onClose}) {
   const [copied,setCopied]=useState(false);
   const [shareUrl,setShareUrl]=useState("");
   const [generating,setGenerating]=useState(false);
+  const [tab,setTab]=useState("share"); // "share" | "print"
 
   async function generateLink(){
     setGenerating(true);
@@ -1151,52 +1157,138 @@ function ShareModal({selectedIds,artworks,onClose}) {
     setShareUrl(`${window.location.origin}/share/${token}`);
     setGenerating(false);
   }
+
   function copy(){
-    navigator.clipboard.writeText(shareUrl||window.location.href);
+    navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(()=>setCopied(false),2500);
   }
+
+  function nativeShare(){
+    if(navigator.share){
+      navigator.share({
+        title:"Forever Drawings",
+        text:`Check out these drawings saved in Forever Drawings!`,
+        url: shareUrl || window.location.href,
+      });
+    }
+  }
+
+  function printDrawings(){
+    const win = window.open("","_blank");
+    win.document.write(`
+      <html><head><title>Forever Drawings — Print</title>
+      <style>
+        body{margin:0;padding:20px;font-family:Georgia,serif;background:white;}
+        .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;page-break-inside:avoid;}
+        .card{border:1px solid #eee;border-radius:8px;overflow:hidden;page-break-inside:avoid;}
+        .card img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;}
+        .info{padding:10px 12px;}
+        .title{font-size:14px;font-weight:700;color:#2D1B00;margin:0 0 4px;}
+        .meta{font-size:11px;color:#8B6040;margin:0;}
+        h1{font-size:22px;color:#E8640A;margin:0 0 20px;text-align:center;}
+        @media print{@page{margin:15mm;} .noprint{display:none;}}
+      </style></head><body>
+      <h1>Forever Drawings</h1>
+      <div class="grid">
+        ${selected.map(a=>`
+          <div class="card">
+            <img src="${a.url}" alt="${a.title}"/>
+            <div class="info">
+              <p class="title">${a.title}</p>
+              <p class="meta">${a.tags?.map(t=>t.name).join(" · ")||""}</p>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <script>window.onload=()=>window.print();</script>
+      </body></html>
+    `);
+    win.document.close();
+  }
+
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:20,padding:32,width:"100%",maxWidth:480,boxShadow:T.shadowMd,maxHeight:"90vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-          <h2 style={{margin:0,fontSize:20,color:T.ink,fontFamily:T.ff,fontWeight:900}}>Share {selected.length} Drawing{selected.length!==1?"s":""}</h2>
+    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.55)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:1000}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(45,27,0,0.18)"}}>
+        <div style={{width:40,height:4,borderRadius:2,background:T.border,margin:"0 auto 16px"}}/>
+
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2 style={{margin:0,fontSize:18,color:T.ink,fontFamily:T.ff,fontWeight:900}}>{selected.length} Drawing{selected.length!==1?"s":""} selected</h2>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:T.muted}}>✕</button>
         </div>
-        <div style={{display:"flex",gap:8,marginBottom:22,flexWrap:"wrap"}}>
+
+        {/* Thumbnail strip */}
+        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:10,marginBottom:16}}>
           {selected.map(a=>(
-            <div key={a.id} style={{position:"relative"}}>
-              <img src={a.url} style={{width:70,height:70,objectFit:"cover",borderRadius:10}} alt={a.title}/>
-              <div style={{position:"absolute",bottom:4,left:4,right:4,background:"rgba(0,0,0,0.55)",borderRadius:4,padding:"2px 4px"}}>
-                <span style={{color:"white",fontSize:9,fontFamily:T.ff}}>{a.title}</span>
+            <div key={a.id} style={{flexShrink:0,position:"relative"}}>
+              <img src={a.url} style={{width:64,height:64,objectFit:"cover",borderRadius:8}} alt={a.title}/>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.55)",borderRadius:"0 0 8px 8px",padding:"2px 4px"}}>
+                <div style={{color:"white",fontSize:8,fontFamily:T.ff,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</div>
               </div>
             </div>
           ))}
         </div>
-        {!shareUrl?(
-          <button onClick={generateLink} disabled={generating} style={{width:"100%",padding:"13px",background:generating?"#F0E0D0":T.orange,color:"white",border:"none",borderRadius:12,fontSize:14,fontWeight:700,cursor:generating?"default":"pointer",fontFamily:T.ff,marginBottom:14}}>
-            {generating?"Creating link…":"✨ Create Share Link"}
-          </button>
-        ):(
-          <div style={{background:T.bg,borderRadius:12,padding:"12px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
-            <input readOnly value={shareUrl} style={{flex:1,border:"none",background:"none",fontSize:12,color:T.ink,fontFamily:T.ff,outline:"none"}}/>
-            <button onClick={copy} style={{background:copied?"#2A7A2A":T.orange,color:"white",border:"none",borderRadius:8,padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:T.ff,whiteSpace:"nowrap"}}>
-              {copied?"✓ Copied":"Copy"}
-            </button>
-          </div>
-        )}
-        <p style={{color:T.muted,fontSize:12,margin:"0 0 14px",textAlign:"center",fontFamily:T.ff}}>Link expires in 30 days · View-only · No account needed</p>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[{icon:"📧",label:"Email"},{icon:"💬",label:"Text Message"}].map(opt=>(
-            <button key={opt.label} style={{padding:"13px",border:`1.5px solid ${T.border}`,borderRadius:12,background:T.white,cursor:"pointer",fontFamily:T.ff,fontSize:13,fontWeight:600,color:T.ink,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <span style={{fontSize:18}}>{opt.icon}</span>{opt.label}
-            </button>
+
+        {/* Tab switcher */}
+        <div style={{display:"flex",background:"#FFF8F0",borderRadius:10,padding:4,marginBottom:20}}>
+          {[["share","📤 Share"],["print","🖨️ Print"]].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",border:"none",borderRadius:8,cursor:"pointer",background:tab===t?"white":"transparent",color:tab===t?T.ink:T.muted,fontWeight:tab===t?700:400,fontFamily:T.ff,fontSize:14,boxShadow:tab===t?"0 2px 8px rgba(45,27,0,0.1)":"none",transition:"all .2s"}}>{l}</button>
           ))}
         </div>
+
+        {/* Share tab */}
+        {tab==="share"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {!shareUrl?(
+              <button onClick={generateLink} disabled={generating} style={{padding:"14px",background:generating?"#F0E0D0":T.orange,color:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:generating?"default":"pointer",fontFamily:T.ff}}>
+                {generating?"Creating link…":"✨ Create Share Link"}
+              </button>
+            ):(
+              <div style={{background:"#FFFDF9",borderRadius:12,padding:"12px 14px",display:"flex",gap:10,alignItems:"center",border:`1.5px solid ${T.border}`}}>
+                <input readOnly value={shareUrl} style={{flex:1,border:"none",background:"none",fontSize:12,color:T.ink,fontFamily:T.ff,outline:"none"}}/>
+                <button onClick={copy} style={{background:copied?"#2A7A2A":T.orange,color:"white",border:"none",borderRadius:8,padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:T.ff,whiteSpace:"nowrap"}}>
+                  {copied?"✓ Copied":"Copy"}
+                </button>
+              </div>
+            )}
+
+            {shareUrl&&<p style={{color:T.muted,fontSize:12,textAlign:"center",fontFamily:T.ff,margin:0}}>View-only · Expires in 30 days · No account needed</p>}
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:4}}>
+              <button onClick={()=>{const m=`Check out these drawings! ${shareUrl}`;window.open(`mailto:?subject=Forever Drawings&body=${encodeURIComponent(m)}`);}} style={{padding:"13px 8px",border:`1.5px solid ${T.border}`,borderRadius:12,background:T.white,cursor:"pointer",fontFamily:T.ff,fontSize:13,fontWeight:600,color:T.ink,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <span style={{fontSize:18}}>📧</span>Email
+              </button>
+              <button onClick={()=>{const m=`Check out these drawings! ${shareUrl}`;window.open(`sms:?body=${encodeURIComponent(m)}`);}} style={{padding:"13px 8px",border:`1.5px solid ${T.border}`,borderRadius:12,background:T.white,cursor:"pointer",fontFamily:T.ff,fontSize:13,fontWeight:600,color:T.ink,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <span style={{fontSize:18}}>💬</span>Text
+              </button>
+              {"share" in navigator&&shareUrl&&(
+                <button onClick={nativeShare} style={{padding:"13px 8px",border:`1.5px solid ${T.border}`,borderRadius:12,background:T.white,cursor:"pointer",fontFamily:T.ff,fontSize:13,fontWeight:600,color:T.ink,display:"flex",alignItems:"center",justifyContent:"center",gap:6,gridColumn:"1/-1"}}>
+                  <span style={{fontSize:18}}>📱</span>Share via phone…
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Print tab */}
+        {tab==="print"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{background:"#FFF8F0",borderRadius:12,padding:"14px 16px",border:`1px solid ${T.border}`}}>
+              <p style={{fontFamily:T.ff,fontSize:13,color:T.muted,margin:0,lineHeight:1.6}}>
+                Opens a print-ready page with {selected.length} drawing{selected.length!==1?"s":""} laid out in a 2-column grid. Use your browser's print dialog to send to a printer or save as PDF.
+              </p>
+            </div>
+            <button onClick={printDrawings} style={{padding:"14px",background:T.ink,color:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:T.ff}}>
+              🖨️ Open Print View
+            </button>
+            <p style={{color:T.muted,fontSize:12,textAlign:"center",fontFamily:T.ff,margin:0}}>Works with any printer · Also saves as PDF</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 
 // ─── ArtworkGrid with carousel + select + share ───────────────────────────────
 function ArtworkGrid({artworks,tags,onTagEdit,isFree,onUpgrade}) {
@@ -1278,140 +1370,206 @@ function ArtworkGrid({artworks,tags,onTagEdit,isFree,onUpgrade}) {
 
 
 // ─── Upload Modal ─────────────────────────────────────────────────────────────
-function UploadModal({ onClose, onUpload, children }) {
-  const [files, setFiles]         = useState([]);
-  const [previews, setPreviews]   = useState([]);
-  const [title, setTitle]         = useState("");
-  const [childId, setChildId]     = useState(children[0]?.id || "");
-  const [grade, setGrade]         = useState("1st");
-  const [artDate, setArtDate]     = useState(new Date().toISOString().split("T")[0]);
-  const [dragging, setDragging]   = useState(false);
-  const [saving, setSaving]       = useState(false);
+function UploadModal({ onClose, onUpload, children, tags }) {
+  const [files, setFiles]       = useState([]);
+  const [previews, setPreviews] = useState([]);
+  const [titles, setTitles]     = useState([]);  // per-photo title
+  const [childId, setChildId]   = useState(children[0]?.id || "");
+  const [grade, setGrade]       = useState("1st");
+  const [artDate, setArtDate]   = useState(new Date().toISOString().split("T")[0]);
+  const [selTags, setSelTags]   = useState([]);
+  const [dragging, setDragging] = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [step, setStep]         = useState(1); // 1=photos, 2=details
   const inputRef = useRef(null);
 
   function addFiles(incoming) {
     const imgs = Array.from(incoming).filter(f => f.type.startsWith("image/"));
     if (!imgs.length) return;
     setFiles(prev => [...prev, ...imgs]);
+    setTitles(prev => [...prev, ...imgs.map(f => {
+      const n = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      return n.charAt(0).toUpperCase() + n.slice(1);
+    })]);
     imgs.forEach(f => {
       const reader = new FileReader();
       reader.onload = e => setPreviews(prev => [...prev, e.target.result]);
       reader.readAsDataURL(f);
     });
-    // Auto-fill title from filename if empty
-    if (!title && imgs[0]) {
-      const name = imgs[0].name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
-      setTitle(name.charAt(0).toUpperCase() + name.slice(1));
-    }
+  }
+
+  function removeFile(i) {
+    setFiles(f => f.filter((_,j)=>j!==i));
+    setPreviews(p => p.filter((_,j)=>j!==i));
+    setTitles(t => t.filter((_,j)=>j!==i));
+  }
+
+  function toggleTag(id) {
+    setSelTags(prev => prev.includes(id) ? prev.filter(t=>t!==id) : [...prev, id]);
   }
 
   async function save() {
     if (!files.length) return;
     setSaving(true);
     try {
-      // In production this calls supabase uploadArtwork()
-      // For now create a local preview URL and add to state
-      await new Promise(r => setTimeout(r, 800)); // simulate upload
+      await new Promise(r => setTimeout(r, 800));
+      const selectedTagObjs = tags.filter(t => selTags.includes(t.id));
       const newArtworks = files.map((file, i) => ({
         id:           String(Date.now() + i),
         child_id:     childId,
-        title:        title || "Untitled",
+        title:        titles[i] || "Untitled",
         grade,
         school_year:  "2025-2026",
         artwork_date: artDate,
         storage_path: `demo/${Date.now()}`,
         url:          previews[i],
-        tags:         [],
+        tags:         selectedTagObjs,
         is_favorite:  false,
       }));
       onUpload(newArtworks);
       onClose();
-    } catch (err) {
-      console.error("Upload failed:", err);
     } finally {
       setSaving(false);
     }
   }
 
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.55)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:1000,padding:0}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(45,27,0,0.18)"}}>
-        {/* Handle bar */}
-        <div style={{width:40,height:4,borderRadius:2,background:T.border,margin:"0 auto 20px"}}/>
+  const lbl = {display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"};
+  const inp = {width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:15,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"};
 
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-          <h2 style={{margin:0,fontSize:20,color:T.ink,fontFamily:T.ff,fontWeight:900}}>Add a Drawing</h2>
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.55)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:1000}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",width:"100%",maxWidth:560,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(45,27,0,0.18)"}}>
+        <div style={{width:40,height:4,borderRadius:2,background:T.border,margin:"0 auto 16px"}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{display:"flex",gap:0}}>
+            {["Photos","Details"].map((s,i)=>(
+              <button key={s} onClick={()=>files.length>0&&setStep(i+1)} style={{padding:"8px 18px",border:"none",background:"none",fontFamily:T.ff,fontSize:14,fontWeight:700,color:step===i+1?T.orange:T.muted,borderBottom:`2.5px solid ${step===i+1?T.orange:"transparent"}`,cursor:"pointer"}}>
+                {i+1}. {s}
+              </button>
+            ))}
+          </div>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:T.muted}}>✕</button>
         </div>
 
-        {/* Drop zone / preview */}
-        <div
-          onDragOver={e=>{e.preventDefault();setDragging(true);}}
-          onDragLeave={()=>setDragging(false)}
-          onDrop={e=>{e.preventDefault();setDragging(false);addFiles(e.dataTransfer.files);}}
-          onClick={()=>inputRef.current?.click()}
-          style={{border:`2.5px dashed ${dragging?T.orange:T.border}`,borderRadius:14,padding:previews.length?"12px":"32px 20px",textAlign:"center",background:dragging?"#FFF5EE":"#FFFDF9",cursor:"pointer",marginBottom:18,transition:"all .2s"}}>
-          {previews.length > 0 ? (
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+        {/* ── Step 1: Photos ── */}
+        {step===1&&(
+          <>
+            {/* Big camera button */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+              <button onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.capture="environment";i.multiple=true;i.onchange=e=>addFiles(e.target.files);i.click();}} style={{padding:"18px 12px",background:T.orange,color:"white",border:"none",borderRadius:14,fontFamily:T.ff,fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                <span style={{fontSize:28}}>📷</span>
+                Take Photo
+              </button>
+              <button onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.onchange=e=>addFiles(e.target.files);i.click();}} style={{padding:"18px 12px",background:"#FFF5EE",color:T.orange,border:`2px solid ${T.orange}`,borderRadius:14,fontFamily:T.ff,fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                <span style={{fontSize:28}}>🖼️</span>
+                Camera Roll
+              </button>
+            </div>
+
+            {/* Drag drop zone */}
+            <div
+              onDragOver={e=>{e.preventDefault();setDragging(true);}}
+              onDragLeave={()=>setDragging(false)}
+              onDrop={e=>{e.preventDefault();setDragging(false);addFiles(e.dataTransfer.files);}}
+              style={{border:`2px dashed ${dragging?T.orange:T.border}`,borderRadius:12,padding:"14px",textAlign:"center",background:dragging?"#FFF5EE":"#FFFDF9",marginBottom:16,transition:"all .2s"}}>
+              <div style={{fontFamily:T.ff,fontSize:13,color:T.muted}}>or drag & drop photos here</div>
+            </div>
+
+            {/* Photo previews with individual titles */}
+            {previews.length>0&&(
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+                <div style={{fontFamily:T.ff,fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.4px"}}>{files.length} photo{files.length!==1?"s":""} selected</div>
+                {previews.map((p,i)=>(
+                  <div key={i} style={{display:"flex",gap:12,alignItems:"center",background:"#FFFDF9",borderRadius:10,padding:"8px 10px",border:`1px solid ${T.border}`}}>
+                    <img src={p} style={{width:56,height:56,objectFit:"cover",borderRadius:8,flexShrink:0}} alt=""/>
+                    <input
+                      value={titles[i]||""}
+                      onChange={e=>{const t=[...titles];t[i]=e.target.value;setTitles(t);}}
+                      placeholder="Drawing title"
+                      style={{flex:1,border:"none",background:"none",fontFamily:T.ff,fontSize:14,color:T.ink,outline:"none"}}
+                    />
+                    <button onClick={()=>removeFile(i)} style={{background:"none",border:"none",color:"#DC2626",cursor:"pointer",fontSize:18,padding:4,flexShrink:0}}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={()=>setStep(2)}
+              disabled={!files.length}
+              style={{width:"100%",padding:"14px",background:files.length?T.orange:"#F0E0D0",color:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:files.length?"pointer":"default",fontFamily:T.ff}}>
+              Next: Add Details →
+            </button>
+          </>
+        )}
+
+        {/* ── Step 2: Details ── */}
+        {step===2&&(
+          <>
+            <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:18}}>
+              {/* Child selector */}
+              {children.length>1&&(
+                <div>
+                  <label style={lbl}>Child</label>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {children.map(c=>(
+                      <button key={c.id} onClick={()=>setChildId(c.id)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:20,border:`1.5px solid ${childId===c.id?c.avatar_color:T.border}`,background:childId===c.id?c.avatar_color+"18":T.white,color:childId===c.id?c.avatar_color:T.muted,cursor:"pointer",fontSize:13,fontFamily:T.ff,fontWeight:700}}>
+                        {c.avatar_emoji} {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Grade + Date */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div>
+                  <label style={lbl}>Grade</label>
+                  <select value={grade} onChange={e=>setGrade(e.target.value)} style={inp}>
+                    {["Pre-K","Kindergarten","1st","2nd","3rd","4th","5th","6th"].map(g=><option key={g} value={g}>{g} Grade</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>Date</label>
+                  <input type="date" value={artDate} onChange={e=>setArtDate(e.target.value)} style={inp}/>
+                </div>
+              </div>
+
+              {/* Tags */}
+              {tags.length>0&&(
+                <div>
+                  <label style={lbl}>Tags</label>
+                  <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                    {tags.map(tag=>(
+                      <button key={tag.id} onClick={()=>toggleTag(tag.id)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:20,border:`1.5px solid ${selTags.includes(tag.id)?tag.color:T.border}`,background:selTags.includes(tag.id)?tag.color+"18":T.white,color:selTags.includes(tag.id)?tag.color:T.muted,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:T.ff,transition:"all .15s"}}>
+                        {tag.icon&&<span>{tag.icon}</span>}
+                        {tag.name}
+                        {selTags.includes(tag.id)&&<span style={{fontSize:10}}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Preview strip */}
+            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:16}}>
               {previews.map((p,i)=>(
-                <div key={i} style={{position:"relative"}}>
-                  <img src={p} style={{width:80,height:80,objectFit:"cover",borderRadius:8}} alt=""/>
-                  <button onClick={e=>{e.stopPropagation();setFiles(f=>f.filter((_,j)=>j!==i));setPreviews(p=>p.filter((_,j)=>j!==i));}} style={{position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:"50%",background:"#DC2626",color:"white",border:"none",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
+                <div key={i} style={{flexShrink:0,textAlign:"center"}}>
+                  <img src={p} style={{width:60,height:60,objectFit:"cover",borderRadius:8}} alt=""/>
+                  <div style={{fontFamily:T.ff,fontSize:9,color:T.muted,marginTop:2,maxWidth:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{titles[i]||"Untitled"}</div>
                 </div>
               ))}
-              <div onClick={()=>inputRef.current?.click()} style={{width:80,height:80,border:`2px dashed ${T.border}`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,color:T.muted,cursor:"pointer"}}>+</div>
             </div>
-          ) : (
-            <>
-              <div style={{fontSize:40,marginBottom:10}}>📸</div>
-              <div style={{fontFamily:T.ff,fontSize:15,color:T.muted,marginBottom:4}}>Tap to take a photo or browse</div>
-              <div style={{fontFamily:T.ff,fontSize:12,color:T.border}}>JPG, PNG, HEIC supported</div>
-            </>
-          )}
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            style={{display:"none"}}
-            onChange={e=>addFiles(e.target.files)}
-          />
-        </div>
 
-        {/* Form fields */}
-        <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:20}}>
-          <div>
-            <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Drawing title</label>
-            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Sunshine Dragon" style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:15,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}/>
-          </div>
-
-          {children.length > 1 && (
-            <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Child</label>
-              <select value={childId} onChange={e=>setChildId(e.target.value)} style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:15,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}>
-                {children.map(c=><option key={c.id} value={c.id}>{c.avatar_emoji} {c.name}</option>)}
-              </select>
+            <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:10}}>
+              <button onClick={()=>setStep(1)} style={{padding:"14px 18px",background:"none",border:`1.5px solid ${T.border}`,borderRadius:12,fontSize:14,fontFamily:T.ff,color:T.muted,cursor:"pointer"}}>← Back</button>
+              <button onClick={save} disabled={saving} style={{padding:"14px",background:saving?"#F0E0D0":T.orange,color:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:saving?"default":"pointer",fontFamily:T.ff,boxShadow:"0 4px 16px rgba(232,100,10,0.3)"}}>
+                {saving?`Saving ${files.length} drawing${files.length!==1?"s":""}…`:`Save ${files.length} Drawing${files.length!==1?"s":""}`}
+              </button>
             </div>
-          )}
-
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Grade</label>
-              <select value={grade} onChange={e=>setGrade(e.target.value)} style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:14,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}>
-                {["Pre-K","Kindergarten","1st","2nd","3rd","4th","5th","6th"].map(g=><option key={g} value={g}>{g} Grade</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Date</label>
-              <input type="date" value={artDate} onChange={e=>setArtDate(e.target.value)} style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:14,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}/>
-            </div>
-          </div>
-        </div>
-
-        <button onClick={save} disabled={!files.length || saving} style={{width:"100%",padding:"15px",background:files.length&&!saving?T.orange:"#F0E0D0",color:"white",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:files.length&&!saving?"pointer":"default",fontFamily:T.ff,boxShadow:files.length?"0 4px 16px rgba(232,100,10,0.3)":"none",transition:"all .2s"}}>
-          {saving ? "Saving…" : files.length ? `Save ${files.length} Drawing${files.length!==1?"s":""}` : "Choose a photo first"}
-        </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1642,6 +1800,7 @@ function Gallery({user, onLogout}) {
         <UploadModal
           onClose={()=>setShowUpload(false)}
           children={children}
+          tags={tags}
           onUpload={newArtworks=>{
             setArtworks(prev=>[...newArtworks,...prev]);
             setShowUpload(false);
