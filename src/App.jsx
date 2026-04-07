@@ -1277,6 +1277,147 @@ function ArtworkGrid({artworks,tags,onTagEdit,isFree,onUpgrade}) {
 }
 
 
+// ─── Upload Modal ─────────────────────────────────────────────────────────────
+function UploadModal({ onClose, onUpload, children }) {
+  const [files, setFiles]         = useState([]);
+  const [previews, setPreviews]   = useState([]);
+  const [title, setTitle]         = useState("");
+  const [childId, setChildId]     = useState(children[0]?.id || "");
+  const [grade, setGrade]         = useState("1st");
+  const [artDate, setArtDate]     = useState(new Date().toISOString().split("T")[0]);
+  const [dragging, setDragging]   = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const inputRef = useRef(null);
+
+  function addFiles(incoming) {
+    const imgs = Array.from(incoming).filter(f => f.type.startsWith("image/"));
+    if (!imgs.length) return;
+    setFiles(prev => [...prev, ...imgs]);
+    imgs.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = e => setPreviews(prev => [...prev, e.target.result]);
+      reader.readAsDataURL(f);
+    });
+    // Auto-fill title from filename if empty
+    if (!title && imgs[0]) {
+      const name = imgs[0].name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      setTitle(name.charAt(0).toUpperCase() + name.slice(1));
+    }
+  }
+
+  async function save() {
+    if (!files.length) return;
+    setSaving(true);
+    try {
+      // In production this calls supabase uploadArtwork()
+      // For now create a local preview URL and add to state
+      await new Promise(r => setTimeout(r, 800)); // simulate upload
+      const newArtworks = files.map((file, i) => ({
+        id:           String(Date.now() + i),
+        child_id:     childId,
+        title:        title || "Untitled",
+        grade,
+        school_year:  "2025-2026",
+        artwork_date: artDate,
+        storage_path: `demo/${Date.now()}`,
+        url:          previews[i],
+        tags:         [],
+        is_favorite:  false,
+      }));
+      onUpload(newArtworks);
+      onClose();
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(45,27,0,0.55)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:1000,padding:0}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(45,27,0,0.18)"}}>
+        {/* Handle bar */}
+        <div style={{width:40,height:4,borderRadius:2,background:T.border,margin:"0 auto 20px"}}/>
+
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <h2 style={{margin:0,fontSize:20,color:T.ink,fontFamily:T.ff,fontWeight:900}}>Add a Drawing</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:T.muted}}>✕</button>
+        </div>
+
+        {/* Drop zone / preview */}
+        <div
+          onDragOver={e=>{e.preventDefault();setDragging(true);}}
+          onDragLeave={()=>setDragging(false)}
+          onDrop={e=>{e.preventDefault();setDragging(false);addFiles(e.dataTransfer.files);}}
+          onClick={()=>inputRef.current?.click()}
+          style={{border:`2.5px dashed ${dragging?T.orange:T.border}`,borderRadius:14,padding:previews.length?"12px":"32px 20px",textAlign:"center",background:dragging?"#FFF5EE":"#FFFDF9",cursor:"pointer",marginBottom:18,transition:"all .2s"}}>
+          {previews.length > 0 ? (
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+              {previews.map((p,i)=>(
+                <div key={i} style={{position:"relative"}}>
+                  <img src={p} style={{width:80,height:80,objectFit:"cover",borderRadius:8}} alt=""/>
+                  <button onClick={e=>{e.stopPropagation();setFiles(f=>f.filter((_,j)=>j!==i));setPreviews(p=>p.filter((_,j)=>j!==i));}} style={{position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:"50%",background:"#DC2626",color:"white",border:"none",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
+                </div>
+              ))}
+              <div onClick={()=>inputRef.current?.click()} style={{width:80,height:80,border:`2px dashed ${T.border}`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,color:T.muted,cursor:"pointer"}}>+</div>
+            </div>
+          ) : (
+            <>
+              <div style={{fontSize:40,marginBottom:10}}>📸</div>
+              <div style={{fontFamily:T.ff,fontSize:15,color:T.muted,marginBottom:4}}>Tap to take a photo or browse</div>
+              <div style={{fontFamily:T.ff,fontSize:12,color:T.border}}>JPG, PNG, HEIC supported</div>
+            </>
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            style={{display:"none"}}
+            onChange={e=>addFiles(e.target.files)}
+          />
+        </div>
+
+        {/* Form fields */}
+        <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:20}}>
+          <div>
+            <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Drawing title</label>
+            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Sunshine Dragon" style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:15,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}/>
+          </div>
+
+          {children.length > 1 && (
+            <div>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Child</label>
+              <select value={childId} onChange={e=>setChildId(e.target.value)} style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:15,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}>
+                {children.map(c=><option key={c.id} value={c.id}>{c.avatar_emoji} {c.name}</option>)}
+              </select>
+            </div>
+          )}
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Grade</label>
+              <select value={grade} onChange={e=>setGrade(e.target.value)} style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:14,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}>
+                {["Pre-K","Kindergarten","1st","2nd","3rd","4th","5th","6th"].map(g=><option key={g} value={g}>{g} Grade</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:T.muted,marginBottom:5,fontFamily:T.ff,textTransform:"uppercase",letterSpacing:"0.4px"}}>Date</label>
+              <input type="date" value={artDate} onChange={e=>setArtDate(e.target.value)} style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${T.border}`,borderRadius:10,fontSize:14,fontFamily:T.ff,background:"#FFFDF9",color:T.ink,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+          </div>
+        </div>
+
+        <button onClick={save} disabled={!files.length || saving} style={{width:"100%",padding:"15px",background:files.length&&!saving?T.orange:"#F0E0D0",color:"white",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:files.length&&!saving?"pointer":"default",fontFamily:T.ff,boxShadow:files.length?"0 4px 16px rgba(232,100,10,0.3)":"none",transition:"all .2s"}}>
+          {saving ? "Saving…" : files.length ? `Save ${files.length} Drawing${files.length!==1?"s":""}` : "Choose a photo first"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Plan limits ─────────────────────────────────────────────────────────────
 const FREE_LIMITS = {
   maxChildren:        1,
@@ -1351,6 +1492,7 @@ function Gallery({user, onLogout}) {
   const [tagEditArt,setTagEditArt]=useState(null);
   const [openAlbum,setOpenAlbum]=useState(null);
   const [upgradeReason,setUpgradeReason]=useState(null);
+  const [showUpload,setShowUpload]=useState(false);
 
   const plan = getPlanInfo(user);
   const isFree = plan === "free";
@@ -1479,7 +1621,7 @@ function Gallery({user, onLogout}) {
         {/* Upload button + limit notice */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
           <button
-            onClick={()=>{ if(isFree && drawingsThisMonth >= FREE_LIMITS.maxDrawingsPerMonth){ setUpgradeReason("drawings"); return; } alert("Upload feature: connect to Supabase to enable real uploads"); }}
+            onClick={()=>{ if(isFree && drawingsThisMonth >= FREE_LIMITS.maxDrawingsPerMonth){ setUpgradeReason("drawings"); return; } setShowUpload(true); }}
             style={{background:T.orange,color:"white",border:"none",borderRadius:30,padding:"11px 22px",fontFamily:T.ff,fontSize:14,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 14px rgba(232,100,10,0.28)"}}>
             + Add Drawing
           </button>
@@ -1496,6 +1638,16 @@ function Gallery({user, onLogout}) {
       </div>
 
       {showAddChild&&<AddChildModal onClose={()=>setShowAddChild(false)} onAdd={c=>{setChildren(p=>[...p,c]);setShowAddChild(false);}}/>}
+      {showUpload&&(
+        <UploadModal
+          onClose={()=>setShowUpload(false)}
+          children={children}
+          onUpload={newArtworks=>{
+            setArtworks(prev=>[...newArtworks,...prev]);
+            setShowUpload(false);
+          }}
+        />
+      )}
       {upgradeReason&&<UpgradeModal reason={upgradeReason} onClose={()=>setUpgradeReason(null)} onUpgrade={()=>setUpgradeReason(null)}/>}
 
       {/* Android/Desktop install prompt */}
@@ -1522,7 +1674,7 @@ function Gallery({user, onLogout}) {
       <style>{`@media(min-width:769px){.mobile-fab{display:none!important}}`}</style>
       <button
         className="mobile-fab"
-        onClick={()=>{ if(isFree && drawingsThisMonth >= FREE_LIMITS.maxDrawingsPerMonth){ setUpgradeReason("drawings"); return; } alert("Upload: connect to Supabase to enable real uploads"); }}
+        onClick={()=>{ if(isFree && drawingsThisMonth >= FREE_LIMITS.maxDrawingsPerMonth){ setUpgradeReason("drawings"); return; } setShowUpload(true); }}
         style={{position:"fixed",bottom:24,right:24,width:64,height:64,borderRadius:"50%",background:T.orange,color:"white",border:"none",fontSize:28,cursor:"pointer",boxShadow:"0 6px 20px rgba(232,100,10,0.45)",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center"}}>
         +
       </button>
